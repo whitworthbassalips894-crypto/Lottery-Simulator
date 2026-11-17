@@ -7,7 +7,8 @@ const KEYS = {
   overrides: 'drawlab:v2:overrides',
   settings: 'drawlab:v2:settings',
   remote: 'drawlab:v2:remote',
-  lastSync: 'drawlab:v2:lastSync'
+  lastSync: 'drawlab:v2:lastSync',
+  bootstrapped: 'drawlab:v2:bootstrapped'
 };
 
 export interface RemoteCache {
@@ -66,6 +67,13 @@ export const store = {
       // 超配额时丢弃缓存，不影响主流程
       localStorage.removeItem(KEYS.remote);
     }
+  },
+  /** 是否已经做过「首次打开自动补齐最近 20 期」 */
+  getBootstrapped(): boolean {
+    return read<boolean>(KEYS.bootstrapped, false);
+  },
+  setBootstrapped(value: boolean) {
+    write(KEYS.bootstrapped, value);
   },
   getLastSync(): string | null {
     return read<string | null>(KEYS.lastSync, null);
