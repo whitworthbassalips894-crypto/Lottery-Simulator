@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BallRow, Card, Chip, Empty, Spinner } from '../components/ui';
+import { Ball, BallRow, Card, Chip, Empty, Spinner } from '../components/ui';
 import { NumberInputs } from '../components/NumberInputs';
 import { useApp } from '../state';
 import { simulateTicket } from '../lib/rng';
-import { useDrawAnimation } from '../lib/useDraw';
-import { checkHit } from '../lib/stats';
-import { BASELINE } from '../lib/stats';
+import { useReveal } from '../lib/useReveal';
+import { BASELINE, checkHit } from '../lib/stats';
 import { addDays, formatDate, localDateKey, parsePeriod, periodForDate } from '../lib/periods';
 import { copyText, ticketToText } from '../lib/clipboard';
-import { pad2 } from '../lib/lottery';
+import { pad2, zodiacOf } from '../lib/lottery';
 import { buildComparison, summarizeSims } from '../lib/analysis';
 import type { Draw } from '../lib/types';
+
+const TOTAL = 7;
 
 export default function Today({
   onOpenRecords,
@@ -19,11 +20,17 @@ export default function Today({
   onOpenRecords: () => void;
   focusDate: string;
 }) {
-  const { drawsAsc, sims, settings, actions, syncing, history } = useApp();
+  const { drawsAsc, sims, checkedPeriods, settings, actions, syncing, history } = useApp();
   const [selectedDate, setSelectedDate] = useState(focusDate);
+  const [phase, setPhase] = useState<'idle' | 'revealing' | 'done'>('idle');
+  const [checkedLocal, setCheckedLocal] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(['', '', '', '', '', '', '']);
   const [manualError, setManualError] = useState('');
+
+  const reveal = useReveal(TOTAL, settings.reduceMotion);
+  const check = useReveal(TOTAL, settings.reduceMotion);
 
   const periodMeta = parsePeriod(periodForDate(selectedDate));
   const period = periodMeta?.id ?? '';
@@ -42,42 +49,81 @@ export default function Today({
   const recorded = period ? official.get(period) ?? null : null;
   const ticket = recorded ?? simulateTicket(period || '2026-001', 0);
   const hit = real && recorded ? checkHit(real, recorded) : null;
-
-  const { display, drawing, play } = useDrawAnimation(settings.reduceMotion);
-  const shown = display ?? ticket;
+  const isChecked = checkedLocal || (period ? checkedPeriods.includes(period) : false);
 
   const comparisons = useMemo(() => buildComparison(sims, drawsAsc), [sims, drawsAsc]);
   const summary = useMemo(() => summarizeSims(comparisons), [comparisons]);
 
+  const isToday = selectedDate === localDateKey();
+  const showCount = phase === 'done' ? TOTAL : phase === 'revealing' ? reveal.step : 0;
+  const checkStep = checking ? check.step : isChecked ? TOTAL : 0;
+
+  // 切换日期时重置仪式状态；已有记录的期直接呈现结果
   useEffect(() => {
     setSelectedDate(focusDate);
   }, [focusDate]);
 
   useEffect(() => {
-    if (real) setManualOpen(false);
+    setChecking(false);
+    setCheckedLocal(false);
+    check.setStep(0);
+    if (recorded) {
+      setPhase('done');
+      reveal.setStep(TOTAL);
+    } else {
+      setPhase('idle');
+      reveal.setStep(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, recorded?.createdAt]);
+
+  useEffect(() => {
+    setManualOpen(false);
     setDraft(real ? [...real.n.map((n) => pad2(n)), pad2(real.s)] : ['', '', '', '', '', '', '']);
     setManualError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, real?.id]);
 
-  const draw = () => {
+  // 自动补齐的历史期：直接显示对奖结果，不需要再走仪式
+  useEffect(() => {
+    if (recorded?.auto && real && !isChecked) {
+      setCheckedLocal(true);
+      actions.markChecked(period);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recorded?.auto, real?.id, isChecked, period]);
+
+  const startDraw = () => {
+    if (!period || recorded || phase === 'revealing') return;
+    setPhase('revealing');
+    reveal.play(() => {
+      actions.archiveSim({
+        period,
+        date: periodMeta?.date ?? selectedDate,
+        attempt: 0,
+        main: ticket.main,
+        special: ticket.special,
+        createdAt: new Date().toISOString()
+      });
+      setPhase('done');
+      actions.toast(`${period} 已落定 · 明天再来`, 'success');
+    });
+  };
+
+  const replay = () => {
     if (!period) return;
-    play(ticket);
-    const record = {
-      period,
-      date: periodMeta?.date ?? selectedDate,
-      attempt: 0,
-      main: ticket.main,
-      special: ticket.special,
-      createdAt: new Date().toISOString()
-    };
-    window.setTimeout(
-      () => {
-        actions.archiveSim(record);
-        actions.toast(`${period} 的模拟号码已记录`, 'success');
-      },
-      settings.reduceMotion ? 0 : 1800
-    );
+    setPhase('revealing');
+    reveal.play(() => setPhase('done'));
+  };
+
+  const startCheck = () => {
+    if (!recorded || !real) return;
+    setChecking(true);
+    check.play(() => {
+      setChecking(false);
+      setCheckedLocal(true);
+      actions.markChecked(period);
+    });
   };
 
   const copy = async () => {
@@ -110,13 +156,65 @@ export default function Today({
     actions.toast(`已补录 ${period} 的开奖结果`, 'success');
   };
 
-  const isToday = selectedDate === localDateKey();
-  const canGoLater = selectedDate < addDays(localDateKey(), 7);
+  const renderSlot = (index: number) => {
+    const special = index === 6;
+    const number = special ? ticket.special : ticket.main[index];
+    const visible = index < showCount;
+
+    if (!visible) {
+      return (
+        <span key={index} className={special ? 'slot is-special' : 'slot'} aria-hidden="true">
+          {special ? '特' : index + 1}
+        </span>
+      );
+    }
+
+    const matched = Boolean(
+      real &&
+        recorded &&
+        index < checkStep &&
+        (special ? recorded.special === real.s : real.n.includes(number))
+    );
+
+    return (
+      <Ball
+        key={index}
+        number={number}
+        special={special}
+        size="lg"
+        matched={matched}
+        zodiac={settings.showZodiac ? zodiacOf(number, periodMeta?.date ?? selectedDate) : undefined}
+      />
+    );
+  };
+
+  const title =
+    phase === 'idle'
+      ? isToday
+        ? '今日尚未开摇'
+        : `${period || '这一期'} 尚未开摇`
+      : phase === 'revealing'
+        ? '揭晓中…'
+        : recorded?.auto
+          ? '这一期已经揭晓'
+          : '今日号码已定';
+
+  const desc =
+    phase === 'idle'
+      ? '每天只有一次。点「开摇」，6 个主号依次落位，最后揭晓特码。'
+      : phase === 'revealing'
+        ? undefined
+        : '号码由期号决定，刷新、换设备都是同一注。';
 
   return (
     <div className="stack">
       <div className="period-switch">
-        <button type="button" className="btn btn-secondary btn-icon" onClick={() => setSelectedDate(addDays(selectedDate, -1))} aria-label="上一天">
+        <button
+          type="button"
+          className="btn btn-secondary btn-icon"
+          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+          aria-label="上一天"
+        >
           ‹
         </button>
         <div className="period-main">
@@ -127,7 +225,7 @@ export default function Today({
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-          disabled={!canGoLater}
+          disabled={selectedDate >= addDays(localDateKey(), 7)}
           aria-label="下一天"
         >
           ›
@@ -149,27 +247,60 @@ export default function Today({
       </div>
 
       <Card
-        kicker="模拟号码"
-        title={`${period || '—'} 这一期`}
-        actions={recorded ? <Chip tone="success" dot>已记录</Chip> : <Chip tone="warn" dot>未摇号</Chip>}
+        kicker={`${isToday ? 'TODAY' : 'PERIOD'} · ${period || '—'}`}
+        title={title}
+        desc={desc}
+        actions={recorded ? <Chip tone="success" dot>已锁定</Chip> : <Chip>今日一次</Chip>}
+        className="ceremony-card"
       >
-        <div className={drawing ? 'draw-stage is-drawing' : 'draw-stage'}>
-          <BallRow main={shown.main} special={shown.special} size="lg" showZodiac={settings.showZodiac} date={periodMeta?.date} />
+        <div
+          className={[
+            'slots',
+            phase === 'revealing' ? 'is-revealing' : '',
+            settings.reduceMotion ? 'is-reduced' : ''
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {Array.from({ length: TOTAL }, (_, i) => renderSlot(i))}
         </div>
 
-        <div className="action-row">
-          <button type="button" className="btn btn-primary" onClick={draw} disabled={drawing || !period}>
-            {drawing ? <Spinner /> : null}
-            {drawing ? '摇号中…' : recorded ? '再播一次' : '摇号'}
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={copy}>
-            复制号码
-          </button>
+        {phase === 'revealing' ? (
+          <p className="reveal-status">
+            正在揭晓 <b>{reveal.step}</b> / {TOTAL}
+          </p>
+        ) : null}
+
+        <div className="action-row action-row-center">
+          {phase === 'idle' ? (
+            <button type="button" className="btn btn-primary btn-lg" onClick={startDraw} disabled={!period}>
+              开摇
+            </button>
+          ) : null}
+          {phase === 'done' ? (
+            <>
+              <button type="button" className="btn btn-secondary" onClick={replay}>
+                回看揭晓
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={copy}>
+                复制号码
+              </button>
+            </>
+          ) : null}
         </div>
 
-        <p className="footnote">
-          号码由「期号」决定：{period || '—'} 永远是这一注，刷新不会变。共 49 选 6 + 1 个特码。
-        </p>
+        {phase === 'done' ? (
+          <div className="stamp">
+            <span className="stamp-period">{period}</span>
+            <span className="stamp-date">{formatDate(periodMeta?.date ?? selectedDate)}</span>
+            <span className="stamp-line" />
+            <span className="stamp-note">{recorded?.auto ? '自动补齐 · 可删除重摇' : '已落定 · 每天一次'}</span>
+          </div>
+        ) : (
+          <p className="footnote center">
+            号码由期号决定：{period || '—'} 永远是这一注，无法重抽。
+          </p>
+        )}
       </Card>
 
       <Card
@@ -178,7 +309,25 @@ export default function Today({
         desc={real ? formatDate(real.date) : '上游同步到这一期后会自动对照，也可以手动补录。'}
         actions={
           real ? (
-            <Chip tone="success">已开奖</Chip>
+            recorded ? (
+              isChecked ? (
+                <>
+                  <Chip tone={hit?.specialHit ? 'accent' : 'neutral'}>
+                    {hit?.mainHits ?? 0} 主号 · {hit?.specialHit ? '特码中' : '特码未中'}
+                  </Chip>
+                  <button type="button" className="btn btn-quiet btn-sm" onClick={startCheck}>
+                    再对一次
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="btn btn-primary btn-sm" onClick={startCheck} disabled={checking}>
+                  {checking ? <Spinner size={11} /> : null}
+                  {checking ? `对奖中 ${check.step}/7` : '对奖'}
+                </button>
+              )
+            ) : (
+              <Chip>待摇号</Chip>
+            )
           ) : (
             <button type="button" className="btn btn-quiet btn-sm" onClick={() => setManualOpen((v) => !v)}>
               {manualOpen ? '收起' : '手动补录'}
@@ -188,32 +337,35 @@ export default function Today({
       >
         {real ? (
           <>
-            <BallRow
-              main={real.n}
-              special={real.s}
-              size="md"
-              showZodiac={settings.showZodiac}
-              date={real.date}
-              matched={hit?.matchedMain ?? []}
-              specialMatched={hit?.specialHit ?? false}
-            />
-            <div className="result-strip">
-              <div>
-                <span>主号命中</span>
-                <strong>{hit ? `${hit.mainHits}/6` : '未摇号'}</strong>
-              </div>
-              <div>
-                <span>特码</span>
-                <strong className={hit?.specialHit ? 'text-good' : ''}>
-                  {hit ? (hit.specialHit ? '命中' : '未中') : '—'}
-                </strong>
-              </div>
-              <div>
-                <span>随机期望</span>
-                <strong className="muted">{BASELINE.mainMean.toFixed(2)} / 6</strong>
-              </div>
-            </div>
-            {!recorded ? <p className="footnote">这一期还没有模拟号码，点上面的「摇号」即可对照。</p> : null}
+            <BallRow main={real.n} special={real.s} size="md" showZodiac={settings.showZodiac} date={real.date} />
+
+            {recorded ? (
+              isChecked ? (
+                <div className="result-strip">
+                  <div>
+                    <span>主号命中</span>
+                    <strong>
+                      {hit?.mainHits ?? 0}
+                      <em>/6</em>
+                    </strong>
+                  </div>
+                  <div>
+                    <span>特码</span>
+                    <strong className={hit?.specialHit ? 'text-good' : ''}>{hit?.specialHit ? '命中' : '未中'}</strong>
+                  </div>
+                  <div>
+                    <span>随机期望</span>
+                    <strong className="muted">{BASELINE.mainMean.toFixed(2)} / 6</strong>
+                  </div>
+                </div>
+              ) : (
+                <p className="footnote">
+                  {checking ? '正在逐个核对…' : '号码已锁定，点右上角「对奖」逐号核对。'}
+                </p>
+              )
+            ) : (
+              <p className="footnote">这一期还没有模拟号码，先在上方摇一注。</p>
+            )}
           </>
         ) : manualOpen ? (
           <div className="manual">
@@ -229,7 +381,7 @@ export default function Today({
             </div>
           </div>
         ) : (
-          <Empty title="这一期还没开奖" desc="可以先去「对照记录」看看最近 20 期的战绩。" />
+          <Empty title="这一期还没开奖" desc="开奖后回来，会有一次逐号对奖。" />
         )}
       </Card>
 
