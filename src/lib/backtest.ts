@@ -65,6 +65,7 @@ export interface StrategyResult {
   longestMiss: number;
   currentMiss: number;
   curve: number[];
+  periodsList: string[];
   years: YearRow[];
   recent: PickRow[];
   best: PickRow | null;
@@ -129,6 +130,7 @@ export function runBacktest(
       longestMiss: 0,
       currentMiss: 0,
       curve: [],
+      periodsList: [],
       years: [],
       recent: [],
       best: null,
@@ -162,6 +164,7 @@ export function runBacktest(
       if (mainHits >= 1) result.main1Plus++;
       result.maxMainHits = Math.max(result.maxMainHits, mainHits);
       result.curve.push(result.specialHits);
+      result.periodsList.push(draw.id);
 
       const row: PickRow = {
         period: draw.id,

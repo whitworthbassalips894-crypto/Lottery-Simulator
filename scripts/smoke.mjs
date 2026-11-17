@@ -34,6 +34,7 @@ const FAKE_RESULT = {
       longestMiss: 40,
       currentMiss: 3,
       curve: Array.from({ length: 320 }, (_, i) => Math.floor(i / 45)),
+      periodsList: Array.from({ length: 320 }, (_, i) => `2026-${String(i + 1).padStart(3, '0')}`),
       years: [{ year: 2026, periods: 320, specialHits: 7, specialRate: 7 / 320, mainMean: 0.75 }],
       recent: [],
       best: {

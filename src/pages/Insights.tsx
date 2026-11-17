@@ -12,7 +12,7 @@ import {
   waveDistribution,
   zoneDistribution
 } from '../lib/stats';
-import { shapeOf, pad2, waveOf, WAVE_LABELS, zodiacOf } from '../lib/lottery';
+import { shapeOf, pad2, waveOf, WAVE_LABELS, zodiacOf, ZODIACS } from '../lib/lottery';
 import { formatDate } from '../lib/periods';
 
 const RANGES = [
@@ -45,6 +45,18 @@ export default function Insights() {
   const sizes = useMemo(() => sizeDistribution(windowDraws), [windowDraws]);
   const zones = useMemo(() => zoneDistribution(windowDraws), [windowDraws]);
   const tails = useMemo(() => tailDistribution(windowDraws), [windowDraws]);
+
+  const zodiacs = useMemo(() => {
+    const counts = new Map<string, number>(ZODIACS.map((z) => [z, 0]));
+    windowDraws.forEach((draw) => {
+      [...draw.n, draw.s].forEach((n) => {
+        const z = zodiacOf(n, draw.date);
+        counts.set(z, (counts.get(z) ?? 0) + 1);
+      });
+    });
+    const max = Math.max(1, ...counts.values());
+    return ZODIACS.map((z) => ({ label: z, count: counts.get(z) ?? 0, max }));
+  }, [windowDraws]);
 
   const sumData = useMemo(() => sumSeries(drawsAsc.slice(-60)), [drawsAsc]);
   const avgSum = useMemo(() => mean(sumData), [sumData]);
@@ -231,7 +243,7 @@ export default function Insights() {
           </div>
         </Panel>
 
-        <Panel kicker="ZONES · 区间" title="三区与尾数" desc="用于判断号码是否集中在某一区间。">
+        <Panel kicker="ZONES · 区间" title="三区 · 尾数 · 生肖" desc="用于判断号码是否集中在某个区间、尾数或生肖。">
           <div className="dist-block">
             <span className="config-label">三区分布</span>
             <DistributionBars data={zones} max={Math.max(...zones.map((z) => z.count))} tone="good" />
@@ -246,6 +258,20 @@ export default function Insights() {
                     <span style={{ width: `${(t.count / Math.max(...tails.map((x) => x.count))) * 100}%` }} />
                   </span>
                   <span className="tail-count">{t.count}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="dist-block">
+            <span className="config-label">生肖分布（按开奖当天农历年）</span>
+            <ul className="zodiac-grid">
+              {zodiacs.map((z) => (
+                <li key={z.label} title={`${z.label}：${z.count} 次`}>
+                  <span className="zodiac-name">{z.label}</span>
+                  <span className="zodiac-bar">
+                    <span style={{ height: `${(z.count / z.max) * 100}%` }} />
+                  </span>
+                  <span className="zodiac-count">{z.count}</span>
                 </li>
               ))}
             </ul>
