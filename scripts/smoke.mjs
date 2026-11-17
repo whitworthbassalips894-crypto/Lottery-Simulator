@@ -72,19 +72,33 @@ async function main() {
   checks.push(['首屏渲染', text().includes('摇号实验室')]);
   checks.push(['历史库加载', text().includes('2026-320')]);
 
-  const sims = JSON.parse(window.localStorage.getItem('drawlab:v2:sims') ?? '[]');
+  let sims = JSON.parse(window.localStorage.getItem('drawlab:v2:sims') ?? '[]');
   checks.push(['自动补齐最近 20 期', sims.length === 20 && sims.every((s) => s.auto === true)]);
   checks.push(['补齐的号码由期号种子决定', sims.every((s) => s.main.length === 6 && s.special >= 1)]);
+  checks.push(['当天不参与自动补齐', !sims.some((s) => s.period === '2026-321')]);
   checks.push(['对照统计出现', /已对照\s*20\s*期/.test(text().replace(/\s+/g, ' '))]);
+
+  // 仪式：进来是空槽
+  const slots = window.document.querySelectorAll('.slot');
+  checks.push(['今日初始为空槽', slots.length === 7 && text().includes('今日尚未开摇')]);
+
+  // 点击开摇 → 逐个揭晓
+  const drawButton = [...window.document.querySelectorAll('button')].find((el) => el.textContent?.trim() === '开摇');
+  checks.push(['开摇按钮存在', Boolean(drawButton)]);
+  if (drawButton) {
+    drawButton.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    await wait(500);
+    checks.push(['揭晓过程中开始出号', window.document.querySelectorAll('.slot').length === 6]);
+    await wait(3200);
+    checks.push(['揭晓完成并落款', text().includes('今日号码已定') && Boolean(window.document.querySelector('.stamp'))]);
+    sims = JSON.parse(window.localStorage.getItem('drawlab:v2:sims') ?? '[]');
+    checks.push(['今日号码已写入本机', sims.some((s) => s.period === '2026-321' && !s.auto)]);
+  }
 
   await clickTab('对照记录');
   checks.push(['对照记录页渲染', text().includes('模拟号码 vs 真实开奖')]);
   await clickTab('数据与设置');
   checks.push(['数据页渲染', text().includes('Number-selection-tool')]);
-
-  await clickTab('今日摇号');
-  const drawButton = [...window.document.querySelectorAll('button')].find((el) => el.textContent?.trim() === '摇号');
-  checks.push(['今日摇号按钮存在', Boolean(drawButton)]);
 
   let failed = 0;
   for (const [name, ok] of checks) {

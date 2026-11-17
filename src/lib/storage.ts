@@ -8,7 +8,8 @@ const KEYS = {
   settings: 'drawlab:v2:settings',
   remote: 'drawlab:v2:remote',
   lastSync: 'drawlab:v2:lastSync',
-  bootstrapped: 'drawlab:v2:bootstrapped'
+  bootstrapped: 'drawlab:v2:bootstrapped',
+  checked: 'drawlab:v2:checked'
 };
 
 export interface RemoteCache {
@@ -74,6 +75,21 @@ export const store = {
   },
   setBootstrapped(value: boolean) {
     write(KEYS.bootstrapped, value);
+  },
+  /** 已经对过奖的期号（只用于控制仪式动画要不要重播） */
+  getChecked(): string[] {
+    const list = read<string[]>(KEYS.checked, []);
+    return Array.isArray(list) ? list.filter((id) => typeof id === 'string') : [];
+  },
+  saveChecked(list: string[]) {
+    write(KEYS.checked, list);
+  },
+  addChecked(period: string): string[] {
+    const list = store.getChecked();
+    if (list.includes(period)) return list;
+    const next = [...list, period];
+    write(KEYS.checked, next);
+    return next;
   },
   getLastSync(): string | null {
     return read<string | null>(KEYS.lastSync, null);

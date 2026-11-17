@@ -7,7 +7,7 @@ import {
 } from './lib/history';
 import { store } from './lib/storage';
 import { DEFAULT_SETTINGS, type Draw, type HistoryFile, type Settings, type SimRecord } from './lib/types';
-import { localDateKey, nextPeriod } from './lib/periods';
+import { localDateKey, nextPeriod, periodForDate } from './lib/periods';
 import { simulateTicket } from './lib/rng';
 
 export type ToastTone = 'success' | 'error' | 'info';
@@ -23,6 +23,7 @@ interface AppContextValue {
   drawsAsc: Draw[];
   overrides: Draw[];
   sims: SimRecord[];
+  checkedPeriods: string[];
   settings: Settings;
   loading: boolean;
   error: string | null;
@@ -41,6 +42,7 @@ interface AppContextValue {
     deleteOverride: (id: string) => void;
     updateSettings: (patch: Partial<Settings>) => void;
     backfillRecent: (count?: number) => number;
+    markChecked: (period: string) => void;
     importBackup: (payload: unknown) => { imported: number; message: string };
     exportBackup: () => string;
     clearLocal: () => void;
@@ -62,6 +64,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lastSync, setLastSync] = useState<string | null>(() => store.getLastSync());
   const [syncOrigin, setSyncOrigin] = useState<string | null>(null);
   const [usingCache, setUsingCache] = useState(false);
+  const [checkedPeriods, setCheckedPeriods] = useState<string[]>(() => store.getChecked());
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastSeq = useRef(0);
   const [today, setToday] = useState(() => localDateKey());
@@ -210,7 +213,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   /** 用期号种子补齐最近 N 期（默认 20 期）的模拟号码，用于立即对照 */
   const backfillRecent = useCallback(
     (count = 20) => {
-      const settled = drawsAsc.slice(-count);
+      // 当天的期号永远留白：仪式感来自「今天还没摇」，历史上没摇过的也补
+      const todayPeriod = periodForDate(localDateKey());
+      const settled = drawsAsc.filter((d) => d.id !== todayPeriod).slice(-count);
       if (!settled.length) return 0;
       const has = new Set(sims.filter((s) => s.attempt === 0).map((s) => s.period));
       const created = settled
@@ -247,6 +252,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (added) toast(`已自动补齐最近 ${added} 期的模拟号码，可直接对照`, 'success');
   }, [backfillRecent, drawsAsc.length, loading, toast]);
 
+  const markChecked = useCallback((period: string) => {
+    setCheckedPeriods(store.addChecked(period));
+  }, []);
+
   const saveOverride = useCallback((draw: Draw) => {
     setOverrides((prev) => {
       const next = prev.filter((r) => r.id !== draw.id).concat(draw);
@@ -274,6 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         exportedAt: new Date().toISOString(),
         settings,
         sims,
+        checkedPeriods,
         overrides,
         source: history?.source ?? null,
         latest: history?.latest ?? null
@@ -281,7 +291,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       null,
       2
     );
-  }, [settings, sims, overrides, history]);
+  }, [settings, sims, checkedPeriods, overrides, history]);
 
   const importBackup = useCallback(
     (payload: unknown) => {
@@ -327,6 +337,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         imported += normalized.length;
       }
 
+      if (Array.isArray(data.checkedPeriods)) {
+        const periods = data.checkedPeriods.filter((id: unknown): id is string => typeof id === 'string');
+        setCheckedPeriods((prev) => {
+          const next = [...new Set([...prev, ...periods])];
+          store.saveChecked(next);
+          return next;
+        });
+      }
+
       if (data.settings && typeof data.settings === 'object') {
         setSettings((prev) => ({ ...prev, ...data.settings, theme: prev.theme }));
       }
@@ -343,6 +362,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     store.clearAll();
     setSims([]);
     setOverrides([]);
+    setCheckedPeriods([]);
     setRemoteDraws([]);
     setLastSync(null);
     setSyncOrigin(null);
@@ -355,6 +375,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     drawsAsc,
     overrides,
     sims,
+    checkedPeriods,
     settings,
     loading,
     error,
@@ -369,6 +390,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sync,
       archiveSim,
       backfillRecent,
+      markChecked,
       removeSim,
       saveOverride,
       deleteOverride,
