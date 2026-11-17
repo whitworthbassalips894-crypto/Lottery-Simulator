@@ -8,6 +8,7 @@ import {
 import { store } from './lib/storage';
 import { DEFAULT_SETTINGS, type Draw, type HistoryFile, type Settings, type SimRecord } from './lib/types';
 import { localDateKey, nextPeriod } from './lib/periods';
+import { simulateTicket } from './lib/rng';
 
 export type ToastTone = 'success' | 'error' | 'info';
 
@@ -39,6 +40,7 @@ interface AppContextValue {
     saveOverride: (draw: Draw) => void;
     deleteOverride: (id: string) => void;
     updateSettings: (patch: Partial<Settings>) => void;
+    backfillRecent: (count?: number) => number;
     importBackup: (payload: unknown) => { imported: number; message: string };
     exportBackup: () => string;
     clearLocal: () => void;
@@ -205,6 +207,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /** 用期号种子补齐最近 N 期（默认 20 期）的模拟号码，用于立即对照 */
+  const backfillRecent = useCallback(
+    (count = 20) => {
+      const settled = drawsAsc.slice(-count);
+      if (!settled.length) return 0;
+      const has = new Set(sims.filter((s) => s.attempt === 0).map((s) => s.period));
+      const created = settled
+        .filter((draw) => !has.has(draw.id))
+        .map((draw) => {
+          const ticket = simulateTicket(draw.id, 0);
+          return {
+            period: draw.id,
+            date: draw.date,
+            attempt: 0,
+            main: ticket.main,
+            special: ticket.special,
+            createdAt: new Date().toISOString(),
+            auto: true
+          } satisfies SimRecord;
+        });
+      if (!created.length) return 0;
+      const next = sims.concat(created).sort((a, b) => (a.period < b.period ? -1 : a.period > b.period ? 1 : a.attempt - b.attempt));
+      setSims(next);
+      store.saveSims(next);
+      return created.length;
+    },
+    [drawsAsc, sims]
+  );
+
+  // 首次打开：自动补齐最近 20 期，让「对照」立刻有内容
+  const bootstrapped = useRef(false);
+  useEffect(() => {
+    if (loading || !drawsAsc.length || bootstrapped.current) return;
+    bootstrapped.current = true;
+    if (store.getBootstrapped()) return;
+    const added = backfillRecent(20);
+    store.setBootstrapped(true);
+    if (added) toast(`已自动补齐最近 ${added} 期的模拟号码，可直接对照`, 'success');
+  }, [backfillRecent, drawsAsc.length, loading, toast]);
+
   const saveOverride = useCallback((draw: Draw) => {
     setOverrides((prev) => {
       const next = prev.filter((r) => r.id !== draw.id).concat(draw);
@@ -326,6 +368,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     actions: {
       sync,
       archiveSim,
+      backfillRecent,
       removeSim,
       saveOverride,
       deleteOverride,

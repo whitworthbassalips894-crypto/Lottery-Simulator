@@ -1,8 +1,7 @@
-/** 页面级派生计算：模拟注单与真实开奖的对照、冷热与形态摘要 */
+/** 模拟注单与真实开奖的对照统计 */
 
-import { BASELINE, checkHit, frequency, missStreaks, type FrequencyRow } from './stats';
+import { checkHit } from './stats';
 import type { Draw, HitSummary, SimRecord } from './types';
-import { shapeOf } from './lottery';
 
 export function indexDraws(draws: Draw[]): Map<string, Draw> {
   const map = new Map<string, Draw>();
@@ -42,53 +41,24 @@ export interface SimSummary {
   specialHits: number;
   specialRate: number;
   mainMean: number;
-  mainDist: number[];
-  longestMiss: number;
-  currentMiss: number;
+  bestMainHits: number;
 }
 
 export function summarizeSims(rows: ComparisonRow[]): SimSummary {
   const periods = rows.length;
-  const specialHits = rows.filter((r) => r.hit.specialHit).length;
-  const mainDist = new Array(7).fill(0);
+  let specialHits = 0;
   let mainTotal = 0;
+  let bestMainHits = 0;
   rows.forEach((r) => {
-    mainDist[r.hit.mainHits]++;
+    if (r.hit.specialHit) specialHits++;
     mainTotal += r.hit.mainHits;
+    bestMainHits = Math.max(bestMainHits, r.hit.mainHits);
   });
-  const streaks = missStreaks(rows.map((r) => r.hit));
   return {
     periods,
     specialHits,
     specialRate: periods ? specialHits / periods : 0,
     mainMean: periods ? mainTotal / periods : 0,
-    mainDist,
-    longestMiss: streaks.longest,
-    currentMiss: streaks.current
+    bestMainHits
   };
 }
-
-/** 近 N 期频率（按时间升序输入） */
-export function recentFrequency(drawsAsc: Draw[], window: number): FrequencyRow[] {
-  const slice = window > 0 ? drawsAsc.slice(-window) : drawsAsc;
-  return frequency(slice);
-}
-
-export interface HotCold {
-  hot: FrequencyRow[];
-  cold: FrequencyRow[];
-  missing: FrequencyRow[];
-}
-
-export function hotCold(rows: FrequencyRow[]): HotCold {
-  const hot = rows.slice().sort((a, b) => b.count - a.count || a.omission - b.omission).slice(0, 6);
-  const cold = rows.slice().sort((a, b) => a.count - b.count || b.omission - a.omission).slice(0, 6);
-  const missing = rows.slice().sort((a, b) => b.omission - a.omission).slice(0, 6);
-  return { hot, cold, missing };
-}
-
-export function latestShapes(drawsAsc: Draw[], count = 8) {
-  return drawsAsc.slice(-count).reverse().map((d) => ({ draw: d, shape: shapeOf(d.n) }));
-}
-
-export const BASELINE_LINE = (n: number): number => n * BASELINE.specialRate;

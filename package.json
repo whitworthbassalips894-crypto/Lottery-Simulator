@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "每日摇号模拟器 Pro · 模拟开奖 × 真实开奖对照 × 策略回测",
+  "description": "摇号实验室：每天一注 6+1 模拟摇号，开奖后自动对照（扁平版）",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc --noEmit && vite build",

@@ -35,6 +35,8 @@ export interface SimRecord {
   main: number[];
   special: number;
   createdAt: string;
+  /** 是否为首次打开时自动补齐的历史期 */
+  auto?: boolean;
 }
 
 export interface HitSummary {
