@@ -292,10 +292,14 @@ export default function Backtest() {
             <LineChart
               ariaLabel="各策略累计特码命中"
               height={300}
-              labels={focused.curve.map((_, i) => `${i + 1}`)}
+              labels={
+                focused.periodsList?.length === focused.curve.length
+                  ? focused.periodsList
+                  : focused.curve.map((_, i) => `#${i + 1}`)
+              }
               series={lineSeries}
               yFormat={(v) => v.toFixed(0)}
-              xFormat={(label) => (Number(label) % 50 === 1 ? label : '')}
+              xFormat={(label, index) => (index % 50 === 0 ? label.slice(-3) : '')}
             />
           </Panel>
 
