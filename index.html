@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <meta
+      name="description"
+      content="摇号实验室：每日 6+1 模拟摇号、1780 期真实开奖对照、多策略历史回测与 49 码数据洞察。"
+    />
+    <meta property="og:title" content="摇号实验室 · Draw Lab" />
+    <meta property="og:description" content="模拟摇号 × 真实开奖对照 × 策略回测，用历史数据检验选号玄学。" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>摇号实验室 · Draw Lab</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('drawlab:v2:settings');
+          var theme = stored ? JSON.parse(stored).theme : 'system';
+          var dark = theme === 'dark' || ((!theme || theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

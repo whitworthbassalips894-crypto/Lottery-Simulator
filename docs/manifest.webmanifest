@@ -1,0 +1,14 @@
+{
+  "name": "摇号实验室 · Draw Lab",
+  "short_name": "摇号实验室",
+  "description": "每日 6+1 模拟摇号、1780 期真实开奖对照、多策略历史回测与 49 码数据洞察。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#0b1220",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
