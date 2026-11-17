@@ -19,7 +19,7 @@ const RANGES = [
   { value: 30, label: '近 30 期' },
   { value: 100, label: '近 100 期' },
   { value: 300, label: '近 300 期' },
-  { value: 0, label: '全部 1780 期' }
+  { value: 0, label: '全部期数' }
 ];
 
 export default function Insights() {

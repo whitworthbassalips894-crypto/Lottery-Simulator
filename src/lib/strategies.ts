@@ -174,7 +174,7 @@ function normalize(values: Map<number, number>): Map<number, number> {
   return out;
 }
 
-/** 形态约束求解：在评分表上选出 size 个号，尽量满足区间／波色／单双／大小／尾数约束 */
+/** 形态约束求解：在评分表上选出 size 个号，满足三区／波色／单双／大小／尾数约束 */
 export function selectConstrained(
   scoreMap: Map<number, number>,
   size = 6,
@@ -199,26 +199,47 @@ export function selectConstrained(
   const norm = normalize(scoreMap);
   const score = (n: number) => norm.get(n) ?? 0.5;
 
-  const chosen: number[] = [];
-  const chosenSet = new Set<number>();
-  const candidates = ALL_NUMBERS.slice().sort((a, b) => score(b) - score(a) || a - b);
-
   const state = (list: number[]) => {
     const zones = [0, 0, 0, 0];
     const waves: Record<Wave, number> = { red: 0, blue: 0, green: 0 };
     const tails = new Array(10).fill(0);
     let odd = 0;
     let big = 0;
+    let total = 0;
     list.forEach((n) => {
       zones[zoneOf(n)]++;
       waves[waveOf(n)]++;
       tails[n % 10]++;
       if (isOdd(n)) odd++;
       if (isBig(n)) big++;
+      total += score(n);
     });
-    return { zones, waves, tails, odd, big };
+    return { zones, waves, tails, odd, big, total };
   };
 
+  /** 不满足硬约束的项数，0 表示完全合规 */
+  const violations = (list: number[]) => {
+    const st = state(list);
+    let count = 0;
+    for (const z of [1, 2, 3]) {
+      if (st.zones[z] < minPerZone) count++;
+      if (st.zones[z] > maxPerZone) count++;
+    }
+    for (const w of ['red', 'blue', 'green'] as Wave[]) {
+      if (st.waves[w] < minPerWave) count++;
+      if (st.waves[w] > maxPerWave) count++;
+    }
+    if (st.odd < oddRange[0] || st.odd > oddRange[1]) count++;
+    if (st.big < bigRange[0] || st.big > bigRange[1]) count++;
+    for (const t of st.tails) if (t > maxTailRepeat) count++;
+    return count;
+  };
+
+  const chosen: number[] = [];
+  const chosenSet = new Set<number>();
+  const candidates = ALL_NUMBERS.slice().sort((a, b) => score(b) - score(a) || a - b);
+
+  // 1. 贪心：逐位插入评分最高、且不破坏可行性的号码
   while (chosen.length < size) {
     const st = state(chosen);
     const rem = size - chosen.length;
@@ -263,7 +284,31 @@ export function selectConstrained(
     chosenSet.add(best);
   }
 
-  return chosen;
+  // 2. 修补：用「换一个号码」的方式把违规项消到 0（优先保留高分组合）
+  let guard = 0;
+  let current = violations(chosen);
+  while (current > 0 && guard++ < 40) {
+    let bestSwap: { list: number[]; violation: number; total: number } | null = null;
+    for (const out of chosen) {
+      for (const inn of candidates) {
+        if (chosenSet.has(inn)) continue;
+        const next = chosen.filter((x) => x !== out).concat(inn);
+        const violation = violations(next);
+        const total = next.reduce((acc, n) => acc + score(n), 0);
+        if (violation < current && (!bestSwap || violation < bestSwap.violation || (violation === bestSwap.violation && total > bestSwap.total))) {
+          bestSwap = { list: next, violation, total };
+        }
+      }
+    }
+    if (!bestSwap) break;
+    chosen.length = 0;
+    chosen.push(...bestSwap.list);
+    chosenSet.clear();
+    chosen.forEach((n) => chosenSet.add(n));
+    current = bestSwap.violation;
+  }
+
+  return chosen.sort((a, b) => a - b);
 }
 
 /** 按策略给出完整偏好排序（长度 49） */

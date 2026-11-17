@@ -4,7 +4,7 @@ import { useApp } from '../state';
 import { simulateTicket } from '../lib/rng';
 import { useDrawAnimation } from '../lib/useDraw';
 import { checkHit } from '../lib/stats';
-import { dateForPeriod, formatDate, localDateKey, parsePeriod, periodForDate, addDays } from '../lib/periods';
+import { addDays, dateForPeriod, formatDate, localDateKey, parsePeriod, periodForDate } from '../lib/periods';
 import { pad2 } from '../lib/lottery';
 import { copyText, ticketToText } from '../lib/clipboard';
 import type { Draw, SimRecord } from '../lib/types';
@@ -73,18 +73,14 @@ function NumberInputs({
 }
 
 export default function Simulator() {
-  const { drawsAsc, sims, nextMeta, settings, actions } = useApp();
-  const [selectedDate, setSelectedDate] = useState(nextMeta.date);
+  const { drawsAsc, sims, settings, actions } = useApp();
+  const [selectedDate, setSelectedDate] = useState(() => localDateKey());
   const [activeAttempt, setActiveAttempt] = useState(0);
   const [filter, setFilter] = useState<'all' | 'settled' | 'pending'>('all');
   const [page, setPage] = useState(1);
   const [manualOpen, setManualOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(['', '', '', '', '', '', '']);
   const [manualError, setManualError] = useState('');
-
-  useEffect(() => {
-    setSelectedDate(nextMeta.date);
-  }, [nextMeta.date]);
 
   const periodMeta = parsePeriod(periodForDate(selectedDate));
   const period = periodMeta?.id ?? '';
@@ -103,7 +99,15 @@ export default function Simulator() {
 
   const compare = real && activeSim ? checkHit(real, activeSim) : null;
 
-  const { display, drawing, play } = useDrawAnimation(settings.reduceMotion);
+  const pendingRecord = useRef<SimRecord | null>(null);
+  const { display, drawing, play } = useDrawAnimation(settings.reduceMotion, () => {
+    const record = pendingRecord.current;
+    if (!record) return;
+    pendingRecord.current = null;
+    actions.archiveSim(record);
+    setActiveAttempt(record.attempt);
+    actions.toast(`第 ${record.attempt + 1} 次摇号已保存`, 'success');
+  });
   const shown = display ?? ticket;
 
   useEffect(() => {
@@ -130,8 +134,7 @@ export default function Simulator() {
       return;
     }
     const result = simulateTicket(period, nextAttempt);
-    play(result);
-    const record: SimRecord = {
+    pendingRecord.current = {
       period,
       date: periodMeta?.date ?? selectedDate,
       attempt: nextAttempt,
@@ -139,12 +142,8 @@ export default function Simulator() {
       special: result.special,
       createdAt: new Date().toISOString()
     };
-    window.setTimeout(() => {
-      actions.archiveSim(record);
-      setActiveAttempt(nextAttempt);
-      actions.toast(`第 ${nextAttempt + 1} 次摇号已保存`, 'success');
-    }, settings.reduceMotion ? 0 : 1500);
-  }, [actions, nextAttempt, period, periodMeta?.date, play, selectedDate, settings.reduceMotion]);
+    play(result);
+  }, [actions, nextAttempt, period, periodMeta?.date, play, selectedDate]);
 
   const handleCopy = async () => {
     const ok = await copyText(ticketToText(shown.main, shown.special));

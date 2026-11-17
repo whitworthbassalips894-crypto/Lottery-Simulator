@@ -6,14 +6,24 @@ import { simulateTicket } from '../lib/rng';
 import { useDrawAnimation } from '../lib/useDraw';
 import { buildComparison, summarizeSims } from '../lib/analysis';
 import { BASELINE } from '../lib/stats';
-import { formatDate, shortDate } from '../lib/periods';
+import { daysBetween, formatDate, localDateKey, parsePeriod, periodForDate, shortDate } from '../lib/periods';
 import { shapeOf, WAVE_LABELS } from '../lib/lottery';
 import { copyText, ticketToText } from '../lib/clipboard';
 import type { TabId } from '../App';
 import type { SimRecord } from '../lib/types';
 
 export default function Dashboard({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
-  const { history, drawsAsc, sims, nextMeta, settings, actions, syncing, lastSync, usingCache } = useApp();
+  const { history, drawsAsc, sims, nextMeta, settings, actions, syncing, lastSync, usingCache, today } = useApp();
+
+  // 「今日」= 今天对应的期号；若今天的开奖已经同步到手，则切换到下一期
+  const todayPeriod = periodForDate(today || localDateKey());
+  const target = useMemo(() => {
+    const todayMeta = parsePeriod(todayPeriod);
+    if (!todayMeta) return nextMeta;
+    const settled = drawsAsc.some((d) => d.id === todayMeta.id);
+    return settled ? nextMeta : todayMeta;
+  }, [drawsAsc, nextMeta, todayPeriod]);
+  const lagDays = history ? daysBetween(history.latest.date, today) : 0;
 
   const official = useMemo(() => {
     const map = new Map<string, SimRecord>();
@@ -24,26 +34,26 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: TabId) => 
     return [...map.values()];
   }, [sims]);
 
-  const archived = official.find((s) => s.period === nextMeta.id) ?? null;
-  const todayTicket = useMemo(() => archived ?? simulateTicket(nextMeta.id, 0), [archived, nextMeta.id]);
+  const archived = official.find((s) => s.period === target.id) ?? null;
+  const todayTicket = useMemo(() => archived ?? simulateTicket(target.id, 0), [archived, target.id]);
 
   const { display, drawing, play } = useDrawAnimation(settings.reduceMotion, () => {
     const record: SimRecord = {
-      period: nextMeta.id,
-      date: nextMeta.date,
+      period: target.id,
+      date: target.date,
       attempt: 0,
       main: todayTicket.main,
       special: todayTicket.special,
       createdAt: new Date().toISOString()
     };
     actions.archiveSim(record);
-    actions.toast(`已归档 ${nextMeta.id} 的模拟号码`, 'success');
+    actions.toast(`已归档 ${target.id} 的模拟号码`, 'success');
   });
 
   const shown = display ?? todayTicket;
   const latest = drawsAsc[drawsAsc.length - 1] ?? null;
   const latestShape = latest ? shapeOf(latest.n) : null;
-  const latestIsTodayTicket = latest ? latest.id === nextMeta.id : false;
+  const latestIsTodayTicket = latest ? latest.id === target.id : false;
 
   const comparisons = useMemo(() => buildComparison(sims, drawsAsc), [sims, drawsAsc]);
   const summary = useMemo(() => summarizeSims(comparisons), [comparisons]);
@@ -76,13 +86,13 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: TabId) => 
             <div>
               <span className="hero-kicker">TODAY · 每日模拟摇号</span>
               <h2 className="hero-title">
-                {nextMeta.id}
-                <span className="hero-title-sub">{formatDate(nextMeta.date)}</span>
+                {target.id}
+                <span className="hero-title-sub">{formatDate(target.date)}</span>
               </h2>
             </div>
             <div className="hero-chips">
               <span className={`hero-chip ${archived ? 'is-ok' : ''}`}>{archived ? '已归档' : '待摇号'}</span>
-              <span className="hero-chip">3 次机会</span>
+              <span className="hero-chip">种子固定</span>
             </div>
           </header>
 
@@ -92,7 +102,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: TabId) => 
               special={shown.special}
               size="xl"
               showZodiac={settings.showZodiac}
-              date={nextMeta.date}
+              date={target.date}
               className="hero-balls"
             />
           </div>
@@ -112,7 +122,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: TabId) => 
 
           <footer className="hero-foot">
             <span>
-              种子 <code>draw-lab:{nextMeta.id}:0</code>
+              种子 <code>draw-lab:{target.id}:0</code>
             </span>
             <span className="dot-sep" />
             <span>同一期结果固定，刷新不会变</span>
@@ -188,10 +198,22 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: TabId) => 
         </Panel>
       </div>
 
+      {lagDays > 1 ? (
+        <div className="notice">
+          <Badge tone="warn">数据延迟</Badge>
+          <span>
+            上游最新一期是 {history?.latest.id}（{history?.latest.date}），比今天晚 {lagDays} 天。可以先摇号，开奖后再同步对照。
+          </span>
+          <button type="button" onClick={() => void actions.sync()} disabled={syncing}>
+            立即同步 →
+          </button>
+        </div>
+      ) : null}
+
       {latest && latestIsTodayTicket ? (
         <div className="notice notice-good">
           <strong>今日开奖已到手</strong>
-          <span>可以把「{nextMeta.id}」的模拟号码与真实开奖做对照了。</span>
+          <span>可以把「{target.id}」的模拟号码与真实开奖做对照了。</span>
           <button type="button" onClick={() => onNavigate('simulator')}>
             查看对照 →
           </button>

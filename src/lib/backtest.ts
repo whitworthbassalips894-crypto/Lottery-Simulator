@@ -139,6 +139,7 @@ export function runBacktest(
   const yearMaps = new Map<StrategyId, Map<number, YearRow>>();
   ids.forEach((id) => yearMaps.set(id, new Map()));
   const hitTrackers = new Map<StrategyId, HitSummary[]>();
+  const recentRows = new Map<StrategyId, PickRow[]>();
 
   const total = Math.max(1, drawsAsc.length - startIndex);
   let done = 0;
@@ -173,6 +174,10 @@ export function runBacktest(
         specialHit
       };
       if (specialHit) result.hitPeriods.push(row);
+      const rows = recentRows.get(id) ?? [];
+      rows.push(row);
+      if (rows.length > 24) rows.shift();
+      recentRows.set(id, rows);
       if (!result.best || mainHits > result.best.mainHits || (mainHits === result.best.mainHits && specialHit)) {
         result.best = row;
       }
@@ -204,6 +209,7 @@ export function runBacktest(
     result.mainMeanCi = [result.mainMean - 1.96 * se, result.mainMean + 1.96 * se];
     result.main3Plus = result.main3Plus / periods;
     result.main1Plus = result.main1Plus / periods;
+    result.recent = recentRows.get(id) ?? [];
     const streaks = missStreaks(hitTrackers.get(id) ?? []);
     result.longestMiss = streaks.longest;
     result.currentMiss = streaks.current;
