@@ -70,15 +70,33 @@ npm run data:sync:local -- ../Number-selection-tool   # 从本地 clone 读取
 
 ## 部署
 
-仓库自带 `.github/workflows/deploy.yml`：
+产物是纯静态文件，两套方案任选：
 
-1. 推送到 `main`（或 PR 合并）→ 自动执行
-2. 安装依赖 → 同步最新开奖 → 冒烟测试 → 构建 → 发布到 GitHub Pages
-3. 每天 01:30（北京时间）定时重建一次，保证开奖数据不过夜
+### 方案 A：分支 /docs（当前已就绪，零配置）
 
-首次启用：仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions** 即可。
+仓库里已经提交了构建好的 `docs/`：
 
-产物是纯静态文件，也可以直接丢到 Vercel / Netlify / Cloudflare Pages（`dist/` 目录）。
+1. **Settings → Pages → Build and deployment → Source** 选 **Deploy from a branch**
+2. Branch 选 `main`（PR 合并后）或当前工作分支，Folder 选 **/docs**
+3. 保存后访问 `https://<用户名>.github.io/Lottery-Simulator/`
+
+数据不需要重新构建：页面打开时会自动向 jsDelivr / raw / GitHub API 拉取最新开奖。
+
+### 方案 B：GitHub Actions 自动构建（可选，需手动启用一次）
+
+`ci/deploy.yml` 是完整的「同步 → 冒烟测试 → 构建 → 发布」流水线。因为自动化令牌没有 workflows 权限，需要你自己执行一次：
+
+```bash
+mkdir -p .github/workflows
+cp ci/deploy.yml .github/workflows/deploy.yml
+git add .github/workflows/deploy.yml && git commit -m "ci: enable Pages deploy" && git push
+```
+
+然后在 **Settings → Pages → Source** 选择 **GitHub Actions**。
+
+### 方案 C：其它静态托管
+
+`dist/`（或 `docs/`）可直接丢到 Vercel / Netlify / Cloudflare Pages，无需任何服务端。
 
 ---
 

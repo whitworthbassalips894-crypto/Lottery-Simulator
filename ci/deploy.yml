@@ -1,0 +1,64 @@
+# GitHub Pages 自动部署（可选）
+#
+# 为什么放在 ci/ 而不是 .github/workflows/：
+#   本仓库的自动提交令牌没有 workflows 权限，Arena 的自动化无法推送 .github/workflows/*.yml。
+#   如果你希望「推送即部署 + 每日定时重建」，用你自己的账号执行一次即可：
+#
+#     mkdir -p .github/workflows
+#     cp ci/deploy.yml .github/workflows/deploy.yml
+#     git add .github/workflows/deploy.yml
+#     git commit -m "ci: enable Pages deploy"
+#     git push
+#
+#   然后在 Settings → Pages → Source 选择 “GitHub Actions”。
+#   在此之前，使用 “Deploy from a branch → /docs” 的静态方案同样可以上线。
+name: Deploy Draw Lab
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '30 17 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Sync latest draws from Number-selection-tool
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run data:sync
+      - run: npm run smoke
+      - run: npm run build
+        env:
+          BUILD_OUT: docs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
