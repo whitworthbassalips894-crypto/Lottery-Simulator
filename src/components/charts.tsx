@@ -277,12 +277,16 @@ export function Heatmap({
   onSelect?: (n: number) => void;
   selected?: number | null;
 }) {
-  const peak = max ?? Math.max(1, ...rows.map((r) => (mode === 'frequency' ? r.count : r.omission)));
+  const values = rows.map((r) => (mode === 'frequency' ? r.count : r.omission));
+  const peak = max ?? Math.max(1, ...values);
+  const floor = Math.min(...values);
+  const span = Math.max(1e-6, peak - floor);
   return (
     <div className="heatmap">
       {rows.map((row) => {
         const value = mode === 'frequency' ? row.count : row.omission;
-        const intensity = Math.min(1, value / peak);
+        // 在最小-最大之间拉伸，避免「全都差不多」时看不出冷热
+        const intensity = Math.max(0.08, Math.min(1, (value - floor) / span));
         const wave = waveOf(row.number);
         return (
           <button
