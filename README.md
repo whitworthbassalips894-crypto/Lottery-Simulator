@@ -1,89 +1,63 @@
-# 摇号实验室 · Draw Lab
+# 特码盲区互补助手（Number-selection-tool 镜像 · 换芯版）
 
-> 每天一注 6+1 的模拟摇号工具，开奖后自动和真实开奖对照。
-> 纯娱乐、无投注、无账号、无追踪。
+线上：<https://whitworthbassalips894-crypto.github.io/Lottery-Simulator/>
 
-线上地址：<https://whitworthbassalips894-crypto.github.io/Lottery-Simulator/>
+这是 [Number-selection-tool](https://whitworthbassalips894-crypto.github.io/Number-selection-tool/) 的**同款页面镜像**：
+版式、卡片、球、热度格、两个弹窗、交互全部照原版，**只把算法内核换掉**，宣发改成互补版。两套页面可以一起开着对照。
 
----
+## 和原版的关系
 
-## 三个页面
+| | 原版（工具2） | 本页（盲区互补版） |
+|---|---|---|
+| #1 | 热态（近期活跃） | **正码传导**（近 1~3 期正码预热 + 30 期全奖托底 + 夹号/合50 联动） |
+| #2 | 遗漏（冷号回补） | **中段蓄力**（特码遗漏 16~30 期断层窗） |
+| #3 | 周期（反向杀号池） | **肖热透支**（近 25 期过热生肖剩余球 + 7~15 期浅冷 + 全奖沉寂） |
+| 提纯 | #1∪#2 − #3 − 近5期已开 | **#1∪#2 − #3 − 近5期已开，且只在工具2 三组并集之外选号** |
 
-| 页面 | 内容 |
-| --- | --- |
-| **今日摇号** | 进来是 7 个空槽，点「开摇」→ 6 个主号依次落位、停顿后揭晓特码 → 落款锁定；开奖后点「对奖」逐号点亮命中 |
-| **对照记录** | 最近 20 期（含首次打开自动补齐）的模拟号码 vs 真实开奖，逐期显示主号命中数与特码是否命中 |
-| **数据与设置** | 一键同步最新开奖、导出/导入备份、补齐最近 20 期、清空本机数据、主题与显示偏好 |
+核心一句话：**先算出工具2 当期三组并集（约 16~18 码）当作盲区，本页只在这些号码之外选。**
+所以两边当期推荐**恒为零重叠**（1720 期回测，异常 0 期），命中互不干扰。
 
-## 每日仪式
-
-1. **空白**：当天没摇过时，只显示 7 个虚线空槽（1–6 与「特」）和一枚「开摇」按钮
-2. **逐个揭晓**：每 380ms 落一个主号，第 6 个之后停 700ms，特码单独落位；途中显示「正在揭晓 3/7」
-3. **落款**：号码定格后出现期号 + 日期 + 「已落定 · 每天一次」，当天不再允许重摇
-4. **对奖**：开奖数据到位后，点「对奖」逐号核对，命中的球逐个点亮，最后给出 `主号 x/6 · 特码中/未中`
-5. **回看**：已揭晓的期可以「回看揭晓」重播动画，结果不会改变
-
-首次打开时会用「期号种子」**自动补齐最近 20 期**（当天除外，留白给仪式），所以一进来就有对照可看，不用等 20 天；删掉后可以随时在数据页重新补齐。
-
-## 数据
-
-- 唯一数据源：[`Number-selection-tool`](https://github.com/whitworthbassalips894-crypto/Number-selection-tool) 的 `data/draws.json`
-- 构建时打包快照（清洗越界／重复／缺号，1780 期有效，2022-001 → 2026-320）
-- 打开页面时按 jsDelivr → raw.githubusercontent → GitHub API → GitHub Pages 顺序尝试最新数据；全部失败也能离线使用快照
-- 同步只读，绝不写回源仓库；上游记录数异常减少 30 期以上会中止覆盖
-
-## 视觉
-
-扁平化：纯色号码球、1px 描边、小圆角、无投影、无渐变，明暗主题共用一套设计变量，手机与桌面同一套布局。
-
-仪式感来自**节奏与留白**而不是拟物：空槽 → 逐个落位 → 停顿 → 特码揭晓 → 落款印章 → 逐号对奖。无音效。
-
-## 本地开发
-
-```bash
-npm ci
-npm run dev        # http://localhost:5173
-npm run build      # 类型检查 + 生产构建 → dist/
-npm run build:docs # 构建到 docs/（GitHub Pages 用）
-npm run test       # 7 项核心逻辑测试
-npm run smoke      # jsdom 冒烟测试：空槽 → 开摇 → 逐个揭晓 → 落款 → 三页渲染
-npm run data:sync  # 从远端同步最新开奖
-```
-
-需要 Node 20+。
-
-## 部署
-
-GitHub Pages 已经在用 **Deploy from a branch → main /docs**：合并到 `main` 后会自动重建。
-
-想换成 Actions 自动构建（含每日定时同步）：把 `ci/deploy.yml` 复制到 `.github/workflows/deploy.yml` 推一次，然后在 Settings → Pages 选择 “GitHub Actions”。纯静态产物也可以直接丢到 Vercel / Netlify / Cloudflare Pages。
+- 提纯平均 9.0 码，1772 期历史命中率 20.0%（≈ 9/49，属正常水位，不是"优势"）。
+- 两套并行等于覆盖约 2 倍号码，命中频率接近翻倍，**成本也翻倍**；单码期望不变。
+- 每期开奖独立随机，本页仅作历史统计与娱乐参考。
 
 ## 目录
 
 ```
-src/
-  App.tsx                 顶部导航 + 三个页面
-  state.tsx               历史库合并、同步、模拟记录、首次自动补齐 20 期
-  styles.css              扁平设计系统（明暗主题 + 响应式）
-  components/ui.tsx       号码球、卡片、按钮、标签、分段控件
-  components/NumberInputs.tsx  7 位号码输入（支持整串粘贴）
-  pages/Today.tsx         今日摇号 + 当期开奖对照
-  pages/Records.tsx       最近记录与统计
-  pages/DataPage.tsx      同步、备份、偏好
-  lib/useReveal.ts        揭晓节奏控制器（380ms / 特码停顿 700ms）
-  lib/                    期号、随机、命中、数据同步、本地存储
+docs/             ← GitHub Pages 直接发布的静态站（根目录即站点根）
+  index.html        单页应用（内联样式 + 内联引擎，1780 期底库内置）
+  assets/           icon.svg / styles.css / six-tier.css（原版照搬）
+  src/              note-sync.js 等数据同步模块（原版照搬）
+  data/draws.json   ┐ 仓库数据源，供「一键同步」读取
+  data/draws.js     ┘
+  manifest.webmanifest / sw.js / .nojekyll
 scripts/
-  sync-history.mjs        历史库同步与清洗
-  smoke.mjs               jsdom 全站冒烟测试
-public/
-  data/history.json       历史库快照
-  legacy.html             旧版单文件摇号器
+  serve.mjs         本地预览（0.0.0.0:4173）
+  check.mjs         JSDOM 冒烟：页面无报错 / 零重叠 / 档位 / 历史回放
 ```
 
-## 概率口径
+## 本地
 
-- 特码（1 个号）命中概率 **1/49 ≈ 2.04%**
-- 6 个主号的单期期望命中 **36/49 ≈ 0.735 个**
-- 6+1 全中概率约 **1/49,000,000**
+```bash
+npm install
+npm start      # http://localhost:4173/
+npm run check  # 冒烟校验
+```
 
-工具只负责模拟、对照和统计展示；任何选号方法都不会改变这些概率。请理性娱乐。
+## 改了哪段代码
+
+只在 `docs/index.html` 内联脚本里：
+
+1. 新增 `selectPoolSeven()` + `computeBlindPlan()`（紧跟原版 `runTool2At()` 之后）。
+   `computeBlindPlan` 先调 `runTool2At` 拿工具2 三组并集当盲区，再算传导/蓄力/杀号池，返回**与原版完全相同的 plan 结构**，所以渲染层一行没改。
+2. 两处调用点：`renderMainPick()` 与 `cacheReplayRow()` 由 `runTool2At(...)` 改为 `computeBlindPlan(...)`。
+3. 文案：标题/H1/组名/标签/依据/页脚改成互补版说法，其余 UI 不动。
+
+## 数据
+
+内置底库 1780 期（内联在 `index.html` 的 `COMPRESSED_DATA`）。
+「一键同步」优先读本站 `./data/draws.json`，落后时再回源仓库原始文件；也可在「数据管理」里手动补录 / 导入导出 / 撤销本机新增。
+
+## 部署
+
+GitHub Pages，source = `main` 分支 `/docs` 目录。推到 `main` 后自动生效，无需构建。

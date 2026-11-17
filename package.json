@@ -1,30 +1,14 @@
 {
-  "name": "lottery-draw-lab",
+  "name": "mark6-blind-mirror",
+  "version": "1.0.0",
   "private": true,
-  "version": "2.0.0",
   "type": "module",
-  "description": "摇号实验室：每天一注 6+1 模拟摇号，开奖后自动对照（扁平版）",
+  "description": "特码盲区互补助手 —— Number-selection-tool 的同款镜像页，内核换成盲区错位互补算法",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5173",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 4173",
-    "data:sync": "node scripts/sync-history.mjs",
-    "data:sync:local": "node scripts/sync-history.mjs --from ../nst",
-    "test": "node --test tests/*.test.mjs",
-    "smoke": "node scripts/smoke.mjs",
-    "build:docs": "tsc --noEmit && vite build --outDir docs --emptyOutDir"
-  },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "start": "node scripts/serve.mjs",
+    "check": "node scripts/check.mjs"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "esbuild": "^0.28.2",
-    "jsdom": "^31.0.1",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "jsdom": "^30.1.3"
   }
 }
