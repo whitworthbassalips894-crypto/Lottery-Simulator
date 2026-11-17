@@ -1,0 +1,29 @@
+{
+  "name": "lottery-draw-lab",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "每日摇号模拟器 Pro · 模拟开奖 × 真实开奖对照 × 策略回测",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "data:sync": "node scripts/sync-history.mjs",
+    "data:sync:local": "node scripts/sync-history.mjs --from ../nst",
+    "test": "node --test tests/*.test.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.28.2",
+    "jsdom": "^31.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
