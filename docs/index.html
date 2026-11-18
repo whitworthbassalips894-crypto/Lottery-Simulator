@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>特码盲区互补助手 · 与工具2零重叠</title>
-<meta name="app-version" content="v2026.11.18-score1">
+<meta name="app-version" content="v2026.11.18-score2">
 <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
-<link rel="manifest" href="./manifest.webmanifest?v=2026.11.18-score1">
+<link rel="manifest" href="./manifest.webmanifest?v=2026.11.18-score2">
 <style>
 :root{
   --ink:#0f172a;
@@ -1062,10 +1062,11 @@ const COMPRESSED_DATA = [
 const STORAGE_KEY = 'mark6_tool2_heat_v2';
 const LEGACY_KEY = 'lucky_draws_minimal_v1';
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
-const APP_BUILD = '2026.11.18-score1';
+const APP_BUILD = '2026.11.18-score2';
 const WAVE_LABEL = { red: '红波', blue: '蓝波', green: '绿波' };
 const MAX_LOCK_RECORDS = 200;
-const TIER_SIZES = [5, 7, 10, 12, 18];
+const UNION_TIER = 18;
+const TIER_SIZES = [5, 7, 10, 12, UNION_TIER];
 
 const WAVE_MAP = (() => {
   const m = new Array(50).fill('green');
@@ -1878,8 +1879,12 @@ let currentPlanData = null;
 let replayTimer = null;
 let replayBusy = false;
 
-// 包括最大档在内，全部取同一排名的前缀；候选较少时不从组外补号。
+// 并集档不限制码数；沿用总分展示顺序，不改变原始排名。
 function picksOfRow(row, tier) {
+  if (tier === UNION_TIER) {
+    const union = new Set(row.union);
+    return row.ranked.filter(n => union.has(n));
+  }
   return row.ranked.slice(0, tier);
 }
 
@@ -1910,9 +1915,10 @@ function renderTopBar() {
 function renderTierTabs() {
   const wrap = document.getElementById('tierTabs');
   const available = currentPlanData.ranked.length;
-  wrap.innerHTML = TIER_SIZES.map(size =>
-    `<button type="button" class="tier-btn${size === activeTier ? ' active' : ''}" data-tier="${size}" role="tab" aria-selected="${size === activeTier}">${size}码<small>${size > available ? `实选${available}码` : `高分前${size}`}</small></button>`
-  ).join('');
+  wrap.innerHTML = TIER_SIZES.map(size => {
+    const note = size === UNION_TIER ? '并集全取' : size > available ? `实选${available}码` : `高分前${size}`;
+    return `<button type="button" class="tier-btn${size === activeTier ? ' active' : ''}" data-tier="${size}" role="tab" aria-selected="${size === activeTier}">${size}码<small>${note}</small></button>`;
+  }).join('');
   wrap.querySelectorAll('button[data-tier]').forEach(btn => {
     btn.addEventListener('click', () => {
       const size = Number(btn.getAttribute('data-tier'));
@@ -1943,7 +1949,7 @@ function renderPicks() {
   host.innerHTML = `
     <div class="pick-heading">
       <b>当前${tierLabel(activeTier, picks.length)}</b>
-      <span>三组共 ${currentPlanData.ranked.length} 个候选 · 按总分排序</span>
+      <span>三组共 ${currentPlanData.union.length} 个候选 · ${activeTier === UNION_TIER ? '并集全取' : '按总分排序'}</span>
     </div>
     <div class="pick-grid">${picks.map(n => `<div class="pick-chip">${ballHtml(n, 'lg')}<span class="pick-score">${currentPlanData.points.get(n)} 分</span></div>`).join('')}</div>
     <div class="copy-preview">
@@ -1954,8 +1960,9 @@ function renderPicks() {
   copyBtn.disabled = picks.length === 0;
 }
 
-function tierLabel(tier, count = tier) {
-  return `${tier}码档${count === tier ? '' : `（实选${count}码）`}`;
+function tierLabel(tier, count) {
+  if (tier === UNION_TIER) return count == null ? '三组并集' : `并集（${count}码）`;
+  return `${tier}码档${count == null || count === tier ? '' : `（实选${count}码）`}`;
 }
 
 function recentPlanRows(count) {
@@ -2018,7 +2025,7 @@ function renderSignal() {
   const hit20 = last20.filter(r => tierHitOf(r, activeTier)).length;
 
   document.getElementById('losingStreakBadge').textContent = `当前连错 ${streak} 期`;
-  document.getElementById('recentHitBadge').textContent = `近${last20.length}期${activeTier}码档中 ${hit20} 期`;
+  document.getElementById('recentHitBadge').textContent = `近${last20.length}期${tierLabel(activeTier)}中 ${hit20} 期`;
 
   const banner = document.getElementById('signalBanner');
   const textEl = document.getElementById('signalText');
@@ -2064,6 +2071,13 @@ function renderMainPick() {
   renderPicks();
 }
 
+function lockedTierLabel(lock, picks) {
+  if (lock.tier !== UNION_TIER) return tierLabel(lock.tier, picks.length);
+  // 旧版 18 档快照可能只锁了前 18 个，不把它当作完整并集。
+  const fullUnion = picks.length === lock.union.length && picks.every(n => lock.union.includes(n));
+  return fullUnion ? `三组并集 ${picks.length} 码` : `旧18码档（实选${picks.length}码）`;
+}
+
 function renderLockArea(targetLabel) {
   if (archiveStaleLock(targetLabel)) saveManual();
   const btn = document.getElementById('lockBtn');
@@ -2080,7 +2094,7 @@ function renderLockArea(targetLabel) {
     btn.textContent = '解除锁定';
     btn.disabled = false;
     current.hidden = false;
-    current.innerHTML = `<div class="lock-current-head"><b>已锁定 ${tierLabel(lockedPlan.tier, picks.length)}</b><span>${escapeHtml(when)}</span></div>
+    current.innerHTML = `<div class="lock-current-head"><b>已锁定 ${lockedTierLabel(lockedPlan, picks)}</b><span>${escapeHtml(when)}</span></div>
       <div class="numbers">${picks.map(lockBallHtml).join('')}</div>`;
   } else {
     title.textContent = '未锁定';
@@ -2096,9 +2110,11 @@ function renderLockArea(targetLabel) {
   document.getElementById('lockHistory').innerHTML = logs.length ? logs.map(log => {
     const when = new Date(log.archivedAt || log.createdAt).toLocaleString('zh-CN');
     const picks = (log.picks && log.picks.length) ? log.picks : log.opt;
+    const isUnion = log.tier === UNION_TIER;
+    const label = isUnion ? `已锁定 ${lockedTierLabel(log, picks)}` : tierLabel(log.tier, picks.length);
     const result = log.special
-      ? `特码 ${lockBallHtml(log.special)} · ${tierLabel(log.tier, picks.length)}${log.hitPicks ? '命中' : '未中'}`
-      : log.stale ? '未开奖前已过期 · 快照已存档' : '锁定快照';
+      ? `特码 ${lockBallHtml(log.special)} · ${label}${log.hitPicks ? '命中' : '未中'}`
+      : `${isUnion ? `${label} · ` : ''}${log.stale ? '未开奖前已过期 · 快照已存档' : '锁定快照'}`;
     return `<div class="lock-record"><strong>${escapeHtml(log.label)}</strong> &nbsp; ${result}<br><small>锁定于 ${escapeHtml(when)}（本机时间）</small><div class="numbers">${picks.map(lockBallHtml).join('')}</div></div>`;
   }).join('') : '<div class="empty">暂无锁定记录</div>';
 }
@@ -2158,10 +2174,11 @@ function renderHeatSection(usable) {
 }
 
 function renderHistoryHead() {
-  const label = `当前${tierLabel(activeTier)}`;
+  const isUnion = activeTier === UNION_TIER;
+  const label = `当前${tierLabel(activeTier, isUnion ? currentPlanData?.union.length : undefined)}`;
   document.getElementById('recentTierColHead').textContent = label;
   document.getElementById('modalTableTierHead').textContent = label;
-  document.getElementById('modalYearlyTierHead').innerHTML = `${label}<small>按分截取</small>`;
+  document.getElementById('modalYearlyTierHead').innerHTML = `${label}<small>${isUnion ? '并集去重' : '按分截取'}</small>`;
 }
 
 function drawBallsHtml(raw7) {
@@ -2198,9 +2215,10 @@ function renderRecentHistory() {
     ? rows.map(r => historyRowHtml(r, activeTier)).join('')
     : '<tr><td colspan="7" class="empty">暂无数据</td></tr>';
   const hit = rows.filter(r => tierHitOf(r, activeTier)).length;
+  const hitLabel = activeTier === UNION_TIER ? '三组并集中' : `当前${tierLabel(activeTier)}命中`;
   document.getElementById('recent30Summary').textContent =
     rows.length
-      ? `最近 ${rows.length} 期 · 当前${tierLabel(activeTier)}命中 ${hit} 期`
+      ? `最近 ${rows.length} 期 · ${hitLabel} ${hit} 期`
       : '暂无数据';
 }
 
@@ -2217,6 +2235,7 @@ function cacheReplayRow(usable, i) {
     raw7: d.raw7,
     special: sp,
     ranked: plan.ranked,
+    union: [...plan.union],
     hot: plan.groups.hot,
     cold: plan.groups.cold,
     cycle: plan.groups.cycle,
@@ -2230,7 +2249,7 @@ function cacheReplayRow(usable, i) {
 }
 
 function ensureRecentReplayCache(usable) {
-  // 各档互为前缀：补到最小档最近一次命中，切换任一档时的连错期数就都是完整的。
+  // 最小档包含于其余各档：补到它最近一次命中即可算全各档的连错期数。
   let foundHit = false;
   for (let i = usable.length - 1; i >= 0; i--) {
     const row = cacheReplayRow(usable, i);
@@ -2581,7 +2600,7 @@ function bindHistoryDetail(tbodyId) {
     const picks = picksOfRow(r, activeTier);
     const colCount = tr.closest('table')?.querySelectorAll('thead th').length || 8;
     tr.insertAdjacentHTML('afterend', `<tr class="detail-row"><td colspan="${colCount}"><div class="detail-groups">
-      ${renderGrp(`推荐 ${picks.length}码`, picks)}
+      ${renderGrp(`${activeTier === UNION_TIER ? '三组并集' : '推荐'} ${picks.length}码`, picks)}
       ${renderGrp('#1 传导', r.hot)}
       ${renderGrp('#2 蓄力', r.cold)}
       ${renderGrp('#3 肖热', r.cycle)}
@@ -2867,6 +2886,6 @@ window.noteSync = {
 
 init();
 </script>
-<script type="module" src="./src/note-sync.js?v=2026.11.18-score1"></script>
+<script type="module" src="./src/note-sync.js?v=2026.11.18-score2"></script>
 </body>
 </html>
