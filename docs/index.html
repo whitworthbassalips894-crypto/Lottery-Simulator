@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>特码盲区互补助手 · 与工具2零重叠</title>
-<meta name="app-version" content="v2026.11.17-mirror1">
+<meta name="app-version" content="v2026.11.18-score1">
 <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
-<link rel="manifest" href="./manifest.webmanifest?v=2026.11.17-mirror1">
+<link rel="manifest" href="./manifest.webmanifest?v=2026.11.18-score1">
 <style>
 :root{
   --ink:#0f172a;
@@ -105,7 +105,6 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
 .ball.sm{width:24px;height:24px;font-size:11.5px}
 .ball.lg{width:38px;height:38px;font-size:15px}
 .ball.xl{width:42px;height:42px;font-size:16.5px}
-.ball.shared-ring{box-shadow:0 0 0 2px #fff,0 0 0 4px #f59e0b}
 .ball.hit-ring{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--hot)}
 .ball.cool-dim{opacity:.45}
 
@@ -226,6 +225,11 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);
   border-radius:13px;padding:15px;margin-bottom:12px;
 }
+.pick-heading{
+  display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;
+  margin-bottom:10px;font-size:12px;color:var(--muted);
+}
+.pick-heading b{font-size:14px;color:var(--ink)}
 .pick-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
@@ -236,15 +240,7 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   background:#fff;border:1px solid var(--line);border-radius:11px;
   padding:9px 5px 7px;text-align:center;
 }
-.pick-chip.is-dual{border-color:#fbbf24;background:#fffdf5}
-.pick-tag{
-  font-size:11px;font-weight:700;color:var(--ink-soft);
-  background:#f1f5f9;border-radius:5px;padding:2px 6px;line-height:1.2;
-  max-width:100%;white-space:nowrap;
-}
-.pick-chip.is-dual .pick-tag{background:#fef3c7;color:#b45309}
-.pick-chip.is-hot .pick-tag{background:#fef2f2;color:#b91c1c}
-.pick-chip.is-cold .pick-tag{background:#eff6ff;color:#1d4ed8}
+.pick-score{font-size:12px;font-weight:700;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 
 .copy-preview{
   margin-top:12px;padding:8px 11px;border-radius:8px;
@@ -256,19 +252,6 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   font:700 13px/1.4 Consolas,ui-monospace,monospace;color:var(--ink);
   word-break:break-all;
 }
-.pick-mix{
-  display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px;
-  font-size:11.5px;color:var(--muted);
-}
-.mix-label{font-weight:700;color:var(--ink-soft)}
-.mix-chip{
-  background:#f1f5f9;border:1px solid var(--line);border-radius:99px;
-  padding:2px 8px;font-weight:700;font-size:11px;color:var(--ink-soft);
-}
-.mix-chip.hot{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
-.mix-chip.cold{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-.mix-chip.both{background:#fffbeb;border-color:#fcd34d;color:#b45309}
-.mix-note{font-size:11px;color:var(--muted)}
 .hero-actions{
   display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-top:12px;
 }
@@ -286,7 +269,7 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   color:#fff;font:800 11.5px Consolas,monospace;
 }
 
-/* 折叠面板（本地锁定记录 & 查看推导细节） */
+/* 本地锁定记录 */
 .fold-card{border:1px solid var(--line);border-radius:11px;margin-top:10px;overflow:hidden;background:#fff}
 summary{list-style:none;cursor:pointer;user-select:none}
 summary::-webkit-details-marker{display:none}
@@ -301,47 +284,6 @@ summary::-webkit-details-marker{display:none}
 .wide-summary .arrow{color:var(--muted);font-size:13px;transition:transform .2s}
 details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .fold-content{border-top:1px solid var(--line);padding:13px;font-size:12.5px;line-height:1.6}
-
-.derive-toggle{width:100%;margin-top:10px}
-.engine-stack.collapsed .panel table{display:none}
-.engine-stack.collapsed .panel .ep-summary{display:flex}
-.engine-stack:not(.collapsed) .panel .ep-summary{display:none}
-.ep-summary{
-  align-items:center;gap:6px;flex-wrap:wrap;
-  font-size:12px;color:var(--ink-soft);padding-top:2px;
-}
-.ep-summary .empty-hint{color:var(--muted);font-weight:600}
-.derive-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
-.sub-chip{background:#f8fafc;border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-size:12px;color:var(--ink-soft)}
-.sub-chip b{font-family:Consolas,monospace;color:var(--ink)}
-.sub-chip.kill{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
-.engine-stack{display:flex;flex-direction:column;gap:10px}
-.panel{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff}
-.ep-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
-.ep-title{font-weight:800;font-size:13.5px;color:var(--ink)}
-.ep-meta{font-size:11px;color:var(--muted);background:#f1f5f9;border-radius:99px;padding:2px 8px;font-weight:700}
-.ep-meta.warn{background:#fef2f2;color:#b91c1c}
-.prediction{width:100%;border-collapse:collapse;font-size:12px}
-.prediction th{color:var(--muted);font-size:11px;background:#f8fafc;font-weight:700;padding:6px 4px;text-align:center}
-.prediction td{padding:6px 4px;text-align:center;border-top:1px solid #f1f5f9}
-.prediction tbody tr.is-kept{background:#f8fbff}
-.ov-tag{
-  display:inline-block;font:700 10.5px "PingFang SC",sans-serif;
-  color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;
-  border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:middle;
-}
-.ov-tag.x3{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
-.ov-tag.cool{background:#e2e8f0;color:#475569;border-color:#cbd5e1}
-
-.cool-pool-box{
-  margin-top:10px;border:1px solid var(--line);background:var(--surface);
-  border-radius:10px;padding:11px 13px;
-  display:flex;flex-direction:column;gap:10px;
-}
-.cool-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.cool-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.cool-label{font-size:12.5px;font-weight:800;color:var(--ink-soft)}
-.sum-balls{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center}
 
 .lock-list{display:grid;gap:8px}
 .lock-record{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:12px}
@@ -411,7 +353,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .hc-flag.hot{background:#e11d48;color:#fff}
 .hc-flag.cold{background:#2563eb;color:#fff}
 
-/* 5. 近 10 期命中简表 & 表格通用 */
+/* 5. 近 30 期命中简表 & 表格通用 */
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:#fff}
 .history{width:100%;border-collapse:collapse;font-size:12.5px;min-width:600px}
 .history th{
@@ -546,7 +488,6 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   .pick-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
   .pick-chip{padding:7px 2px 6px}
   .pick-chip .ball.lg{width:33px;height:33px;font-size:13.5px}
-  .pick-tag{font-size:10px;padding:1px 4px}
   .hero-actions{grid-template-columns:1fr;gap:8px}
   .hero-actions .btn{width:100%;min-height:46px}
   .heat{gap:4px}
@@ -654,7 +595,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     <div class="opt-hero-box" id="optHero"></div>
 
     <div class="hero-actions">
-      <button type="button" class="btn primary" id="copyMainBtn" data-copy="">一键复制推荐号码</button>
+      <button type="button" class="btn primary" id="copyMainBtn" data-copy="" data-copy-label="一键复制推荐号码">一键复制推荐号码</button>
       <button type="button" class="btn" id="lockBtn">锁定本期</button>
     </div>
 
@@ -672,22 +613,6 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
       <div class="fold-content">
         <div style="display:none" id="lockTitle">未锁定</div>
         <div id="lockHistory" class="lock-list"><div class="empty">暂无记录</div></div>
-      </div>
-    </details>
-
-    <details class="fold-card" id="deriveFold">
-      <summary class="wide-summary">
-        <span class="left">
-          <b>选号依据</b>
-          <span class="sub-hint">默认只显示摘要，点「展开完整表」再看逐号明细</span>
-        </span>
-        <span class="arrow">⌄</span>
-      </summary>
-      <div class="fold-content">
-        <div class="derive-chips" id="deriveChips"></div>
-        <div class="engine-stack" id="tool2Panels"></div>
-        <div class="cool-pool-box" id="tool2Summary"></div>
-        <button type="button" class="btn sm derive-toggle" id="deriveToggle" data-expanded="0">展开完整表 ▾</button>
       </div>
     </details>
   </section>
@@ -716,12 +641,12 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     <div id="heatmap" class="heat"></div>
   </section>
 
-  <!-- 模块 5：近 10 期命中简表 -->
+  <!-- 模块 5：近 30 期命中简表 -->
   <section class="card" id="recentHistorySection" data-module="recent-history">
     <div class="card-head">
       <div class="card-title-wrap">
-        <h2>近 10 期命中简表</h2>
-        <span class="pill subtle" id="recent10Summary">最近 10 期</span>
+        <h2>近 30 期命中简表</h2>
+        <span class="pill subtle" id="recent30Summary">最近 30 期</span>
       </div>
       <button type="button" class="btn ghost recent-head-btn" id="openHistoryModal">查看全部</button>
     </div>
@@ -732,10 +657,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
           <tr>
             <th class="col-period">期号</th>
             <th>开奖号码（末位特码）</th>
-            <th id="recentTierColHead">当前10码</th>
+            <th id="recentTierColHead">当前10码档</th>
             <th>#1 传导</th>
             <th>#2 蓄力</th>
-            <th>#3 杀号池</th>
+            <th>#3 肖热</th>
             <th>明细</th>
           </tr>
         </thead>
@@ -761,10 +686,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
             <tr>
               <th>年份</th>
               <th>期数</th>
-              <th id="modalYearlyTierHead">当前10码<small>按分截取</small></th>
+              <th id="modalYearlyTierHead">当前10码档<small>按分截取</small></th>
               <th>#1 传导<small>7码</small></th>
               <th>#2 蓄力<small>7码</small></th>
-              <th>#3 杀号池<small>7码</small></th>
+              <th>#3 肖热<small>7码</small></th>
               <th>三组并集<small>去重</small></th>
             </tr>
           </thead>
@@ -788,10 +713,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
             <tr>
               <th class="col-period">期号</th>
               <th>开奖号码（末位特码）</th>
-              <th id="modalTableTierHead">当前10码</th>
+              <th id="modalTableTierHead">当前10码档</th>
               <th>#1 传导</th>
               <th>#2 蓄力</th>
-              <th>#3 杀号池</th>
+              <th>#3 肖热</th>
               <th>明细</th>
             </tr>
           </thead>
@@ -1137,8 +1062,7 @@ const COMPRESSED_DATA = [
 const STORAGE_KEY = 'mark6_tool2_heat_v2';
 const LEGACY_KEY = 'lucky_draws_minimal_v1';
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
-const COOLDOWN_LOOKBACK = 5;
-const APP_BUILD = '2026.11.17-mirror1';
+const APP_BUILD = '2026.11.18-score1';
 const WAVE_LABEL = { red: '红波', blue: '蓝波', green: '绿波' };
 const MAX_LOCK_RECORDS = 200;
 const TIER_SIZES = [5, 7, 10, 12, 18];
@@ -1166,12 +1090,6 @@ const LUNAR_NEW_YEAR_DATES = {
   2031: { date: '2031-01-23', zodiac: '猪', prevZodiac: '狗' },
   2032: { date: '2032-02-11', zodiac: '鼠', prevZodiac: '猪' }
 };
-
-const DAILY_THREE_CATALOG = [
-  { id: 'hot', code: '#1', name: '传导', fullTitle: '#1 正码传导（近3期正码预热）', icon: '⚡', color: '#e54b4b', role: '7码·盲区内' },
-  { id: 'cold', code: '#2', name: '蓄力', fullTitle: '#2 中段蓄力（16-30期断层）', icon: '🎯', color: '#3b82f6', role: '7码·盲区内' },
-  { id: 'cycle', code: '#3', name: '杀号池', fullTitle: '#3 肖热透支（反向杀号池）', icon: '🛡️', color: '#10a878', role: '排除重叠' }
-];
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -1232,9 +1150,9 @@ function sanitizeLockSnapshot(raw) {
   const parsed = parseLabel(raw.label);
   if (!parsed) return null;
   const opt = cleanNumberList(raw.opt);
-  if (!opt.length) return null;
   const picks = cleanNumberList(raw.picks);
   const effectivePicks = picks.length ? picks : opt;
+  if (!effectivePicks.length) return null;
   const tierVal = Number(raw.tier);
   const tier = TIER_SIZES.includes(tierVal) ? tierVal : effectivePicks.length;
   const stamp = Date.parse(String(raw.createdAt || ''));
@@ -1388,13 +1306,13 @@ function loadManual() {
 }
 
 function lockPlanFromModel(plan, label, tier = activeTier) {
-  const picks = picksOfRow(plan, tier);
+  const picks = picksOfRow(plan, tier).sort((a, b) => a - b);
   return {
     label,
     createdAt: new Date().toISOString(),
     tier,
     picks,
-    opt: [...plan.optPicks],
+    opt: picks, // 保留 v3 备份字段；新快照的主推即所锁档位。
     hot: [...plan.groups.hot],
     cold: [...plan.groups.cold],
     cycle: [...plan.groups.cycle],
@@ -1433,7 +1351,7 @@ function archiveLockedResult(record) {
   lockedPlan = null;
 }
 
-/* ==================== 原版工具2 选号与专属提纯引擎 ==================== */
+/* ==================== 工具2 三组并集（仅用于确定互补范围） ==================== */
 function zoneOf(n) { return n <= 16 ? 1 : n <= 33 ? 2 : 3; }
 
 function selectBalancedSeven(scoreMap, opts) {
@@ -1660,7 +1578,6 @@ function runTool2At(usableAsc, P, year, periodNum, dateStr) {
   const hotMap = new Float64Array(50);
   const coldMap = new Float64Array(50);
   const cycleMap = new Float64Array(50);
-  const spMeta = new Array(50);
   const lastSpZone = lastSpecial != null ? zoneOf(lastSpecial) : -1;
   const tailSpan = Math.max(1, maxSTail - minSTail);
 
@@ -1729,52 +1646,15 @@ function runTool2At(usableAsc, P, year, periodNum, dateStr) {
       (lastNormMask[n] ? 0.35 : 0) -
       (isLastSp ? 0.80 : 0) +
       jitter(n, 89) * 0.45;
-
-    spMeta[n] = { zodiac: ZODIACS[zIdx], omission: sCur };
   }
 
   const hot = selectBalancedSeven(hotMap, { minPerZone: 1, maxPerZone: 3, minPerColor: 1, maxPerColor: 3, oddRange: [3, 4], bigRange: [3, 4], maxTailRepeat: 2 });
   const cold = selectBalancedSeven(coldMap, { minPerZone: 1, maxPerZone: 3, minPerColor: 1, maxPerColor: 3, oddRange: [3, 4], bigRange: [3, 4], maxTailRepeat: 2 });
   const cycle = selectBalancedSeven(cycleMap, { minPerZone: 2, maxPerZone: 3, minPerColor: 2, maxPerColor: 3, oddRange: [3, 4], bigRange: [3, 4], maxTailRepeat: 1 });
 
-  const counts = new Uint8Array(50);
-  for (const n of hot) counts[n]++;
-  for (const n of cold) counts[n]++;
-  for (const n of cycle) counts[n]++;
-
-  const union = [];
-  for (let n = 1; n <= 49; n++) if (counts[n] >= 1) union.push(n);
-
-  const recentCool = [];
-  for (let k = 1; k <= COOLDOWN_LOOKBACK && P - k >= 0; k++) {
-    const s = usableAsc[P - k].special;
-    if (!recentCool.includes(s)) recentCool.push(s);
-  }
-  const coolSet = new Set(recentCool);
-  const cycSet = new Set(cycle);
-  const hcUnion = [...new Set([...hot, ...cold])].sort((a, b) => a - b);
-  const optPicks = hcUnion.filter(n => !cycSet.has(n) && !coolSet.has(n));
-  const killedByCyc = hcUnion.filter(n => cycSet.has(n));
-  const killedByCool = hcUnion.filter(n => !cycSet.has(n) && coolSet.has(n));
-  const hotKept = hot.filter(n => !cycSet.has(n) && !coolSet.has(n));
-  const coldKept = cold.filter(n => !cycSet.has(n) && !coolSet.has(n));
-  const hotColdShared = hot.filter(n => cold.includes(n));
-
   return {
     groups: { hot, cold, cycle },
-    scores: { hot: hotMap, cold: coldMap, cycle: cycleMap },
-    counts,
-    union,
-    spMeta,
-    recentCool,
-    coolSet,
-    cycSet,
-    optPicks,
-    killedByCyc,
-    killedByCool,
-    hotKept,
-    coldKept,
-    hotColdShared
+    union: [...new Set([...hot, ...cold, ...cycle])].sort((a, b) => a - b)
   };
 }
 
@@ -1798,22 +1678,31 @@ function selectPoolSeven(pool, scoreMap) {
   return chosen.sort((a, b) => a - b);
 }
 
-/**
- * 盲区互补版内核：
- *   1) 先跑工具2 原版三组（#1 热态 / #2 遗漏 / #3 周期），取其并集 ≈ 16~18 码作为「盲区」
- *   2) 只在盲区之外选号：#1 正码传导 / #2 中段蓄力（16-30 期断层）/ #3 肖热透支反向杀号池
- *   3) 提纯 = #1∪#2 − #3 − 近5期已开，因此与工具2 当期推荐 100% 零重叠
- * 返回结构与 runTool2At 完全一致，渲染层无需改动。
- */
+// 三组等权。每次提名加 20 分，另按组内原始得分排名加 1～7 分（并列同奖）。
+// 因此两组共同推荐的号码总是排在单组之前，三组共同推荐的号码排在最前。
+function scoreStrategyPicks(groups, scoreMaps) {
+  const points = new Map();
+  for (const [key, nominees] of Object.entries(groups)) {
+    const raw = scoreMaps[key];
+    for (const n of nominees) {
+      const rankBonus = nominees.filter(other => raw[other] <= raw[n]).length;
+      points.set(n, (points.get(n) || 0) + 20 + rankBonus);
+    }
+  }
+  const union = [...points.keys()].sort((a, b) => a - b);
+  const ranked = union.slice().sort((a, b) => points.get(b) - points.get(a) || a - b);
+  return { union, ranked, points };
+}
+
+// 只用目标期以前的有效开奖。三个策略在工具2未覆盖的号码内各提名七码。
 function computeBlindPlan(usableAsc, P, year, periodNum, dateStr) {
   const base = runTool2At(usableAsc, P, year, periodNum, dateStr);
   const effDate = dateStr || (P > 0 ? usableAsc[P - 1].date : `${year}-01-01`);
   const baseZIdx = yearZodiacBaseIdx(effDate);
-  const banned = new Set(base.union);
-  const coolSet = base.coolSet;
+  const covered = new Set(base.union);
 
   const pool = [];
-  for (let n = 1; n <= 49; n++) if (!banned.has(n)) pool.push(n);
+  for (let n = 1; n <= 49; n++) if (!covered.has(n)) pool.push(n);
 
   const nF3 = new Int16Array(50), nF10 = new Int16Array(50), aF30 = new Int16Array(50);
   const allOmit = new Int16Array(50).fill(60);
@@ -1842,12 +1731,9 @@ function computeBlindPlan(usableAsc, P, year, periodNum, dateStr) {
   const relayMap = new Float64Array(50);
   const midMap = new Float64Array(50);
   const drainMap = new Float64Array(50);
-  const spMeta = new Array(50);
 
-  for (let n = 1; n <= 49; n++) {
+  for (const n of pool) {
     const zIdx = ((baseZIdx - (n - 1)) % 12 + 12) % 12;
-    spMeta[n] = { zodiac: ZODIACS[zIdx], omission: spOmit[n] };
-    if (banned.has(n)) continue;
     const tl = n % 10;
     const clamp = (n > 1 && n < 49 && lastRaw.has(n - 1) && lastRaw.has(n + 1)) ? 0.45 : 0;
     const mirror = (lastSp > 0 && n + lastSp === 50) ? 0.50 : 0;
@@ -1868,51 +1754,19 @@ function computeBlindPlan(usableAsc, P, year, periodNum, dateStr) {
               + (zSp25[zIdx] <= 1 ? 0.45 : 0)
               + (nF3[n] >= 1 ? 0.40 : 0);
 
-    // #3 肖热透支（反向杀号池）：近 25 期过热生肖剩余球 + 7~15 期尴尬浅冷 + 全奖沉寂
+    // #3 肖热透支：近 25 期活跃生肖 + 7~15 期浅冷 + 全奖沉寂
     drainMap[n] = (zSp25[zIdx] >= 4 ? 1.80 : zSp25[zIdx] === 3 ? 0.85 : 0)
                 + (spOmit[n] >= 7 && spOmit[n] <= 15 ? 1.15 : 0)
                 + (allOmit[n] >= 10 ? 0.75 : 0)
                 + (tSp25[tl] <= 1 ? 0.40 : 0);
   }
 
-  const relay = selectPoolSeven(pool, relayMap);
-  const mid = selectPoolSeven(pool, midMap);
-  const drain = selectPoolSeven(pool, drainMap);
-
-  const drainSet = new Set(drain);
-  const rmUnion = [...new Set([...relay, ...mid])].sort((a, b) => a - b);
-  const optPicks = rmUnion.filter(n => !drainSet.has(n) && !coolSet.has(n));
-  const hotColdShared = relay.filter(n => mid.includes(n) && !drainSet.has(n) && !coolSet.has(n));
-  const killedByCyc = rmUnion.filter(n => drainSet.has(n));
-  const killedByCool = rmUnion.filter(n => !drainSet.has(n) && coolSet.has(n));
-  const hotKept = relay.filter(n => !drainSet.has(n) && !coolSet.has(n));
-  const coldKept = mid.filter(n => !drainSet.has(n) && !coolSet.has(n));
-  const union = [...new Set([...relay, ...mid, ...drain])].sort((a, b) => a - b);
-
-  const counts = new Uint8Array(50);
-  for (const n of relay) counts[n]++;
-  for (const n of mid) counts[n]++;
-  for (const n of drain) counts[n]++;
-
-  return {
-    groups: { hot: relay, cold: mid, cycle: drain },
-    scores: { hot: relayMap, cold: midMap, cycle: drainMap },
-    counts,
-    union,
-    spMeta,
-    recentCool: base.recentCool,
-    coolSet,
-    cycSet: drainSet,
-    optPicks,
-    killedByCyc,
-    killedByCool,
-    hotKept,
-    coldKept,
-    hotColdShared,
-    t2Union: base.union,
-    t2BannedSize: base.union.length,
-    overlapWithTool2: optPicks.filter(n => banned.has(n)).length
+  const groups = {
+    hot: selectPoolSeven(pool, relayMap),
+    cold: selectPoolSeven(pool, midMap),
+    cycle: selectPoolSeven(pool, drainMap)
   };
+  return { groups, ...scoreStrategyPicks(groups, { hot: relayMap, cold: midMap, cycle: drainMap }) };
 }
 
 /* ==================== 渲染组件 ==================== */
@@ -1953,14 +1807,6 @@ async function handleCopyButton(btn) {
   btn.classList.add('copied');
   btn.textContent = '已复制 ✓';
   setTimeout(() => { btn.classList.remove('copied'); btn.textContent = label; }, 1200);
-}
-
-function bindCopyButtons(root) {
-  root.querySelectorAll('button[data-copy]').forEach(btn => {
-    if (btn.dataset.copyBound) return;
-    btn.dataset.copyBound = '1';
-    btn.addEventListener('click', () => handleCopyButton(btn));
-  });
 }
 
 /* ==================== 近100期热度统计 ==================== */
@@ -2019,86 +1865,23 @@ function heatCellStyle(freq, scope) {
 
 function heatHotThreshold(scope) { return scope === 'special' ? 5 : 18; }
 
-/* ==================== 主推候选排序（沿用原版三组分数，仅按固定层级截取） ==================== */
-function rankCandidatesFromPlan(plan) {
-  const rankPct = (map) => {
-    const entries = [];
-    for (let n = 1; n <= 49; n++) entries.push([n, map[n]]);
-    entries.sort((a, b) => b[1] - a[1] || a[0] - b[0]);
-    const out = new Float64Array(50);
-    for (let idx = 0; idx < entries.length; idx++) out[entries[idx][0]] = (49 - idx) / 49;
-    return out;
-  };
-
-  const rh = rankPct(plan.scores.hot);
-  const rc = rankPct(plan.scores.cold);
-  const rcy = rankPct(plan.scores.cycle);
-  const optSet = new Set(plan.optPicks);
-  const sharedSet = new Set(plan.hotColdShared);
-  const hotSet = new Set(plan.groups.hot);
-  const coldSet2 = new Set(plan.groups.cold);
-
-  const rows = [];
-  for (let n = 1; n <= 49; n++) {
-    let tier, score;
-    if (optSet.has(n) && sharedSet.has(n)) {
-      tier = 4;
-      score = (rh[n] + rc[n]) / 2;
-    } else if (optSet.has(n)) {
-      tier = 3;
-      score = hotSet.has(n) ? rh[n] + 0.15 * rc[n] : rc[n] + 0.15 * rh[n];
-    } else if (!plan.cycSet.has(n) && !plan.coolSet.has(n)) {
-      tier = 2;
-      score = Math.max(rh[n], rc[n]) + 0.25 * Math.min(rh[n], rc[n]) - 0.20 * rcy[n];
-    } else if (!plan.coolSet.has(n)) {
-      tier = 1;
-      score = Math.max(rh[n], rc[n]) + 0.10 * Math.min(rh[n], rc[n]) - 0.25 * rcy[n];
-    } else {
-      tier = 0;
-      score = Math.max(rh[n], rc[n]) / 2 - 0.20 * rcy[n] - (hotSet.has(n) ? 0.05 : 0) - (coldSet2.has(n) ? 0.05 : 0);
-    }
-    rows.push({ n, tier, score });
-  }
-  rows.sort((a, b) => b.tier - a.tier || b.score - a.score || a.n - b.n);
-  return rows.map(r => r.n);
-}
-
-function pickTagOf(plan, n) {
-  if (plan.hotColdShared.includes(n)) return { text: '双维核心', cls: 'is-dual' };
-  if (plan.groups.hot.includes(n)) return { text: '传导', cls: 'is-hot' };
-  if (plan.groups.cold.includes(n)) return { text: '蓄力', cls: 'is-cold' };
-  if (plan.cycSet.has(n)) return { text: '杀号', cls: '' };
-  if (plan.coolSet.has(n)) return { text: '近5已开', cls: '' };
-  return { text: '综合', cls: '' };
-}
-
 /* ==================== 各模块渲染 ==================== */
 const THERMO_DEFS = [
   { key: 'hitHot', code: '#1', name: '传导', color: '#e54b4b', desc: '正码传导 7 码' },
   { key: 'hitCold', code: '#2', name: '蓄力', color: '#3b82f6', desc: '中段蓄力 7 码' },
-  { key: 'hitCycle', code: '#3', name: '杀号池', color: '#10a878', desc: '肖热透支 7 码' }
+  { key: 'hitCycle', code: '#3', name: '肖热', color: '#10a878', desc: '肖热透支 7 码' }
 ];
-const RECENT_REPLAY_WINDOW = 48;
+const RECENT_HIT_WINDOW = 30;
 
 let activeUsable = [];
 let currentPlanData = null;
 let replayTimer = null;
 let replayBusy = false;
 
-/* 18 码档位 = #1∪#2∪#3 去重后的全部号码；其余档位仍按原版分数排序截取 */
-const UNION_TIER = 18;
-
+// 包括最大档在内，全部取同一排名的前缀；候选较少时不从组外补号。
 function picksOfRow(row, tier) {
-  if (tier === UNION_TIER) return [...row.union].sort((a, b) => a - b);
-  return row.ranked.slice(0, tier).slice().sort((a, b) => a - b);
+  return row.ranked.slice(0, tier);
 }
-
-function currentPicks() {
-  if (!currentPlanData) return [];
-  return picksOfRow(currentPlanData, activeTier);
-}
-
-function currentPicksText() { return currentPicks().map(pad2).join(','); }
 
 function renderTopBar() {
   const records = allRecords();
@@ -2126,8 +1909,9 @@ function renderTopBar() {
 
 function renderTierTabs() {
   const wrap = document.getElementById('tierTabs');
+  const available = currentPlanData.ranked.length;
   wrap.innerHTML = TIER_SIZES.map(size =>
-    `<button type="button" class="tier-btn${size === activeTier ? ' active' : ''}" data-tier="${size}" role="tab" aria-selected="${size === activeTier}">${size}码<small>${size === UNION_TIER ? '并集全取' : `高分前${size}`}</small></button>`
+    `<button type="button" class="tier-btn${size === activeTier ? ' active' : ''}" data-tier="${size}" role="tab" aria-selected="${size === activeTier}">${size}码<small>${size > available ? `实选${available}码` : `高分前${size}`}</small></button>`
   ).join('');
   wrap.querySelectorAll('button[data-tier]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2136,6 +1920,7 @@ function renderTierTabs() {
       activeTier = size;
       renderTierTabs();
       renderPicks();
+      renderSignal();
       renderLockArea(expectedNextLabel());
       renderHistoryHead();
       renderRecentHistory();
@@ -2153,126 +1938,24 @@ function renderPicks() {
     copyBtn.disabled = true;
     return;
   }
-  const plan = currentPlanData.plan;
-  const picks = currentPicks();
-  const chips = picks.map(n => {
-    const tag = pickTagOf(plan, n);
-    return `<div class="pick-chip ${tag.cls}">${ballHtml(n, 'lg')}<span class="pick-tag">${tag.text}</span></div>`;
-  }).join('');
+  const picks = picksOfRow(currentPlanData, activeTier);
+  const copyText = picks.slice().sort((a, b) => a - b).map(pad2).join(',');
   host.innerHTML = `
-    <div class="pick-grid">${chips}</div>
-    <div class="copy-preview">
-      <span>复制格式（英文逗号分隔）${activeTier === UNION_TIER ? ` · 三组并集共 ${picks.length} 码` : ''}</span>
-      <code>${currentPicksText()}</code>
+    <div class="pick-heading">
+      <b>当前${tierLabel(activeTier, picks.length)}</b>
+      <span>三组共 ${currentPlanData.ranked.length} 个候选 · 按总分排序</span>
     </div>
-    ${activeTier === UNION_TIER ? '' : `<div class="pick-mix">${buildMixHint(plan, picks)}</div>`}`;
-  copyBtn.setAttribute('data-copy', currentPicksText());
-  copyBtn.setAttribute('data-copy-label', '一键复制推荐号码');
+    <div class="pick-grid">${picks.map(n => `<div class="pick-chip">${ballHtml(n, 'lg')}<span class="pick-score">${currentPlanData.points.get(n)} 分</span></div>`).join('')}</div>
+    <div class="copy-preview">
+      <span>复制格式（号码升序，英文逗号分隔）</span>
+      <code>${copyText}</code>
+    </div>`;
+  copyBtn.setAttribute('data-copy', copyText);
   copyBtn.disabled = picks.length === 0;
 }
 
-function buildMixHint(plan, picks) {
-  const hotSet = new Set(plan.groups.hot);
-  const coldSet = new Set(plan.groups.cold);
-  let hot = 0, cold = 0, both = 0;
-  for (const n of picks) {
-    const h = hotSet.has(n), c = coldSet.has(n);
-    if (h && c) both++;
-    else if (h) hot++;
-    else if (c) cold++;
-  }
-  const parts = [
-    `<span class="mix-chip hot">传导 ${hot}</span>`,
-    `<span class="mix-chip cold">蓄力 ${cold}</span>`
-  ];
-  if (both) parts.push(`<span class="mix-chip both">双维 ${both}</span>`);
-  const other = picks.length - hot - cold - both;
-  if (other > 0) parts.push(`<span class="mix-chip">其他 ${other}</span>`);
-  return `<span class="mix-label">本档构成</span>${parts.join('')}<span class="mix-note">（#1 传导吃近期正码预热，#2 蓄力吃 16-30 期断层，两者同时命中即为双维核心）</span>`;
-}
-
-function renderDerive(plan) {
-  document.getElementById('deriveChips').innerHTML = [
-    `<span class="sub-chip">#1 传导净留：<b>${plan.hotKept.map(pad2).join(' ') || '无'}</b></span>`,
-    `<span class="sub-chip">#2 蓄力净留：<b>${plan.coldKept.map(pad2).join(' ') || '无'}</b></span>`,
-    `<span class="sub-chip">工具2 三组并集已剔除：<b>${plan.t2BannedSize} 码</b></span>`,
-    plan.killedByCyc.length ? `<span class="sub-chip kill">被 #3 杀号池排除：<b>${plan.killedByCyc.map(pad2).join(' ')}</b></span>` : '',
-    plan.killedByCool.length ? `<span class="sub-chip kill">近5期已开剔除：<b>${plan.killedByCool.map(pad2).join(' ')}</b></span>` : ''
-  ].join('');
-
-  const hcUnionSet = new Set([...plan.groups.hot, ...plan.groups.cold]);
-  const optSet = new Set(plan.optPicks);
-
-  document.getElementById('tool2Panels').classList.add('collapsed');
-  document.getElementById('tool2Panels').innerHTML = DAILY_THREE_CATALOG.map(cat => {
-    const nums = plan.groups[cat.id];
-    const scMap = plan.scores[cat.id];
-    const isCycPanel = cat.id === 'cycle';
-    const rowsHtml = nums.map(n => {
-      const m = plan.spMeta[n];
-      const isKept = !isCycPanel && optSet.has(n);
-      const inCyc = !isCycPanel && plan.cycSet.has(n);
-      const inCool = plan.coolSet.has(n);
-      let tags = '';
-      if (isCycPanel) {
-        if (hcUnionSet.has(n)) tags += '<span class="ov-tag x3">已排除</span>';
-      } else {
-        if (isKept) tags += '<span class="ov-tag">★主推</span>';
-        if (inCyc) tags += '<span class="ov-tag x3">杀号排除</span>';
-        if (inCool) tags += '<span class="ov-tag cool">近5期开过</span>';
-      }
-      const dim = isCycPanel ? (hcUnionSet.has(n) ? 'cool-dim' : '') : (!isKept ? 'cool-dim' : '');
-      return `<tr class="${isKept ? 'is-kept' : ''}">
-        <td style="text-align:left;padding-left:10px">${ballHtml(n, dim)}${tags}</td>
-        <td>${m.zodiac}</td>
-        <td>${(n & 1) ? '单' : '双'}·${n >= 25 ? '大' : '小'}</td>
-        <td>${m.omission}期</td>
-        <td><b>${scMap[n].toFixed(1)}</b></td>
-      </tr>`;
-    }).join('');
-
-    const summaryBalls = nums.map(n => ballHtml(n, 'sm' + (isCycPanel ? (hcUnionSet.has(n) ? ' cool-dim' : '') : (!optSet.has(n) ? ' cool-dim' : '')))).join('');
-    let summaryNote = '';
-    if (isCycPanel) {
-      const killed = nums.filter(n => hcUnionSet.has(n)).length;
-      summaryNote = `<span class="empty-hint">命中传导/蓄力组 ${killed} 个，作为反向排除</span>`;
-    } else {
-      const keptN = nums.filter(n => optSet.has(n)).length;
-      const cycN = nums.filter(n => plan.cycSet.has(n)).length;
-      const coolN = nums.filter(n => plan.coolSet.has(n)).length;
-      summaryNote = `<span class="empty-hint">主推保留 ${keptN} · 杀号排除 ${cycN} · 近5期开过 ${coolN}</span>`;
-    }
-
-    return `<div class="panel" style="border-top:3px solid ${cat.color}">
-      <div class="ep-head">
-        <span class="ep-title">${cat.icon} ${cat.fullTitle}</span>
-        <span class="ep-meta${isCycPanel ? ' warn' : ''}">${cat.role}</span>
-      </div>
-      <div class="ep-summary">${summaryBalls}${summaryNote}</div>
-      <table class="prediction">
-        <thead><tr><th style="text-align:left;padding-left:10px">号码</th><th>生肖</th><th>形态</th><th>遗漏</th><th>得分</th></tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>`;
-  }).join('');
-
-  const sharedHtml = plan.hotColdShared.length
-    ? plan.hotColdShared.map(n => ballHtml(n, 'sm shared-ring')).join('')
-    : '<span class="dc-note">本期无</span>';
-
-  document.getElementById('tool2Summary').innerHTML = `
-    <div class="cool-row">
-      <div class="cool-group"><span class="cool-label">★ 双维核心 #1∩#2（${plan.hotColdShared.length}码）</span><span class="sum-balls">${sharedHtml}</span></div>
-    </div>
-    <div class="cool-row">
-      <div class="cool-group"><span class="cool-label">🧊 近5期已开（自动回避）</span><span class="sum-balls">${plan.recentCool.map(n => ballHtml(n, 'sm cool-dim')).join('') || '<span class="dc-note">无</span>'}</span></div>
-    </div>
-    <div class="cool-row">
-      <div class="cool-group"><span class="cool-label">盲区提纯主推（${plan.optPicks.length}码 · 与工具2 零重叠）</span><span class="sum-balls">${plan.optPicks.map(n => ballHtml(n, 'sm')).join('') || '<span class="dc-note">本期空仓</span>'}</span></div>
-      <button type="button" class="btn sm" data-copy="${escapeHtml(plan.optPicks.map(pad2).join(','))}" data-copy-label="复制提纯">复制提纯</button>
-    </div>`;
-
-  bindCopyButtons(document.getElementById('tool2Summary'));
+function tierLabel(tier, count = tier) {
+  return `${tier}码档${count === tier ? '' : `（实选${count}码）`}`;
 }
 
 function recentPlanRows(count) {
@@ -2285,19 +1968,18 @@ function recentPlanRows(count) {
   return out;
 }
 
-function losingStreak() {
+function losingStreak(tier) {
   let streak = 0;
   for (let i = activeUsable.length - 1; i >= 0; i--) {
     const r = planCache.get(activeUsable[i].label);
-    if (!r) break;
-    if (r.hitOpt) break;
+    if (!r || tierHitOf(r, tier)) break;
     streak++;
   }
   return streak;
 }
 
 function renderThermometer() {
-  const rows = recentPlanRows(30);
+  const rows = recentPlanRows(RECENT_HIT_WINDOW);
   const host = document.getElementById('thermometerList');
   if (!rows.length) {
     host.innerHTML = '<div class="empty">数据不足，暂无温度计</div>';
@@ -2330,13 +2012,13 @@ function renderThermometer() {
 }
 
 function renderSignal() {
-  const rows = recentPlanRows(30);
-  const streak = losingStreak();
-  const last20 = recentPlanRows(20);
-  const hit20 = last20.filter(r => r.hitOpt).length;
+  const rows = recentPlanRows(RECENT_HIT_WINDOW);
+  const streak = losingStreak(activeTier);
+  const last20 = rows.slice(-20);
+  const hit20 = last20.filter(r => tierHitOf(r, activeTier)).length;
 
   document.getElementById('losingStreakBadge').textContent = `当前连错 ${streak} 期`;
-  document.getElementById('recentHitBadge').textContent = `近20期主推中 ${hit20} 期`;
+  document.getElementById('recentHitBadge').textContent = `近${last20.length}期${activeTier}码档中 ${hit20} 期`;
 
   const banner = document.getElementById('signalBanner');
   const textEl = document.getElementById('signalText');
@@ -2377,15 +2059,9 @@ function renderMainPick() {
     renderPicks();
     return;
   }
-  const plan = computeBlindPlan(activeUsable, activeUsable.length, p.year, p.periodNum, periodToDate(p.year, p.periodNum));
-  currentPlanData = { label: nextLbl, plan, ranked: rankCandidatesFromPlan(plan), union: [...plan.union] };
-  const overlapLine = document.getElementById('zeroOverlapLine');
-  if (overlapLine) overlapLine.textContent = `工具2 盲区互补 · 本期剔除 ${plan.t2BannedSize} 码 · 零重叠`;
-  const overlapTag = document.getElementById('zeroOverlapTag');
-  if (overlapTag) overlapTag.textContent = `零重叠 · 剔除${plan.t2BannedSize}码`;
+  currentPlanData = computeBlindPlan(activeUsable, activeUsable.length, p.year, p.periodNum, periodToDate(p.year, p.periodNum));
   renderTierTabs();
   renderPicks();
-  renderDerive(plan);
 }
 
 function renderLockArea(targetLabel) {
@@ -2404,7 +2080,7 @@ function renderLockArea(targetLabel) {
     btn.textContent = '解除锁定';
     btn.disabled = false;
     current.hidden = false;
-    current.innerHTML = `<div class="lock-current-head"><b>已锁定 ${lockedPlan.tier || picks.length} 码</b><span>${escapeHtml(when)}</span></div>
+    current.innerHTML = `<div class="lock-current-head"><b>已锁定 ${tierLabel(lockedPlan.tier, picks.length)}</b><span>${escapeHtml(when)}</span></div>
       <div class="numbers">${picks.map(lockBallHtml).join('')}</div>`;
   } else {
     title.textContent = '未锁定';
@@ -2421,7 +2097,7 @@ function renderLockArea(targetLabel) {
     const when = new Date(log.archivedAt || log.createdAt).toLocaleString('zh-CN');
     const picks = (log.picks && log.picks.length) ? log.picks : log.opt;
     const result = log.special
-      ? `特码 ${lockBallHtml(log.special)} · ${log.tier || picks.length}码${log.hitPicks ?? log.hitOpt ? '命中' : '未中'} · 盲区提纯${log.hitOpt ? '命中' : '未中'}`
+      ? `特码 ${lockBallHtml(log.special)} · ${tierLabel(log.tier, picks.length)}${log.hitPicks ? '命中' : '未中'}`
       : log.stale ? '未开奖前已过期 · 快照已存档' : '锁定快照';
     return `<div class="lock-record"><strong>${escapeHtml(log.label)}</strong> &nbsp; ${result}<br><small>锁定于 ${escapeHtml(when)}（本机时间）</small><div class="numbers">${picks.map(lockBallHtml).join('')}</div></div>`;
   }).join('') : '<div class="empty">暂无锁定记录</div>';
@@ -2482,15 +2158,10 @@ function renderHeatSection(usable) {
 }
 
 function renderHistoryHead() {
-  const suffix = `${activeTier}`;
-  const actual = currentPlanData ? currentPicks().length : 0;
-  const label = activeTier === UNION_TIER ? `当前并集${actual ? `（${actual}码）` : ''}` : `当前${suffix}码`;
-  const a = document.getElementById('recentTierColHead');
-  const b = document.getElementById('modalTableTierHead');
-  const c = document.getElementById('modalYearlyTierHead');
-  if (a) a.textContent = label;
-  if (b) b.textContent = label;
-  if (c) c.innerHTML = activeTier === UNION_TIER ? `${label}<small>并集去重</small>` : `${label}<small>按分截取</small>`;
+  const label = `当前${tierLabel(activeTier)}`;
+  document.getElementById('recentTierColHead').textContent = label;
+  document.getElementById('modalTableTierHead').textContent = label;
+  document.getElementById('modalYearlyTierHead').innerHTML = `${label}<small>按分截取</small>`;
 }
 
 function drawBallsHtml(raw7) {
@@ -2508,11 +2179,12 @@ function historyRowHtml(r, tier) {
   const cell = (hit, cls = 'hit') => hit
     ? `<span class="badge ${cls}">${pad2(r.special)}</span>`
     : '<span class="miss-dash">-</span>';
-  const anyHit = tierHitOf(r, tier) || r.hitHot || r.hitCold || r.hitCycle;
+  const tierHit = tierHitOf(r, tier);
+  const anyHit = tierHit || r.hitHot || r.hitCold || r.hitCycle;
   return `<tr class="main-row${anyHit ? ' row-hit' : ''}" data-lbl="${escapeHtml(r.label)}">
     <td class="col-period">${escapeHtml(r.label)}</td>
     <td>${drawBallsHtml(r.raw7)}</td>
-    <td>${cell(tierHitOf(r, tier), 'tier-hit')}</td>
+    <td>${cell(tierHit, 'tier-hit')}</td>
     <td>${cell(r.hitHot)}</td>
     <td>${cell(r.hitCold)}</td>
     <td>${cell(r.hitCycle)}</td>
@@ -2521,56 +2193,49 @@ function historyRowHtml(r, tier) {
 }
 
 function renderRecentHistory() {
-  const rows = recentPlanRows(10).slice().reverse();
+  const rows = recentPlanRows(RECENT_HIT_WINDOW).reverse();
   document.getElementById('historyBody').innerHTML = rows.length
     ? rows.map(r => historyRowHtml(r, activeTier)).join('')
     : '<tr><td colspan="7" class="empty">暂无数据</td></tr>';
   const hit = rows.filter(r => tierHitOf(r, activeTier)).length;
-  document.getElementById('recent10Summary').textContent =
+  document.getElementById('recent30Summary').textContent =
     rows.length
-      ? `最近 ${rows.length} 期 · ${activeTier === UNION_TIER ? '三组并集' : `当前${activeTier}码`}中 ${hit} 期`
+      ? `最近 ${rows.length} 期 · 当前${tierLabel(activeTier)}命中 ${hit} 期`
       : '暂无数据';
 }
 
 /* ==================== 历史回放（完整历史逐期明细与年度命中率） ==================== */
 function cacheReplayRow(usable, i) {
   const d = usable[i];
-  if (planCache.has(d.label)) return;
+  if (planCache.has(d.label)) return planCache.get(d.label);
   const plan = computeBlindPlan(usable, i, d.year, d.periodNum, d.date);
   const sp = d.special;
-  planCache.set(d.label, {
+  const row = {
     label: d.label,
     year: String(d.year),
     date: d.date,
     raw7: d.raw7,
     special: sp,
-    ranked: rankCandidatesFromPlan(plan),
-    union: [...plan.union],
-    opt: plan.optPicks,
+    ranked: plan.ranked,
     hot: plan.groups.hot,
     cold: plan.groups.cold,
     cycle: plan.groups.cycle,
-    hitOpt: plan.optPicks.includes(sp),
     hitHot: plan.groups.hot.includes(sp),
     hitCold: plan.groups.cold.includes(sp),
     hitCycle: plan.groups.cycle.includes(sp),
     hitUnion: plan.union.includes(sp)
-  });
+  };
+  planCache.set(d.label, row);
+  return row;
 }
 
 function ensureRecentReplayCache(usable) {
-  let start = Math.max(0, usable.length - RECENT_REPLAY_WINDOW);
-  for (let i = start; i < usable.length; i++) cacheReplayRow(usable, i);
-  // 若最近窗口内全部未中，继续向前补齐，保证「当前连错期数」准确
-  while (start > 0 && usable.length - start < 240) {
-    let allMiss = true;
-    for (let i = start; i < usable.length; i++) {
-      if (planCache.get(usable[i].label)?.hitOpt) { allMiss = false; break; }
-    }
-    if (!allMiss) break;
-    const newStart = Math.max(0, start - 40);
-    for (let i = newStart; i < start; i++) cacheReplayRow(usable, i);
-    start = newStart;
+  // 各档互为前缀：补到最小档最近一次命中，切换任一档时的连错期数就都是完整的。
+  let foundHit = false;
+  for (let i = usable.length - 1; i >= 0; i--) {
+    const row = cacheReplayRow(usable, i);
+    if (tierHitOf(row, TIER_SIZES[0])) foundHit = true;
+    if (foundHit && usable.length - i >= RECENT_HIT_WINDOW) break;
   }
 }
 
@@ -2770,10 +2435,10 @@ function showEntryFlash(record, usable) {
   const idx = usable.findIndex(d => d.label === record.label);
   const snap = idx >= 0 ? computeHeatSnapshot(usable, idx, 'special') : null;
   const hits = [];
-  if (rec?.hitOpt) hits.push('盲区提纯');
+  if (rec && tierHitOf(rec, activeTier)) hits.push(tierLabel(activeTier));
   if (rec?.hitHot) hits.push('#1 传导');
   if (rec?.hitCold) hits.push('#2 蓄力');
-  if (rec?.hitCycle) hits.push('#3 杀号池');
+  if (rec?.hitCycle) hits.push('#3 肖热');
   const hitTxt = hits.length ? `命中 <b>${hits.join('、')}</b>` : '未中';
   const incTxt = (snap?.increased || []).map(x => `<b>${pad2(x.n)}</b>(${x.prev}→${x.curr})`).join('、') || '无';
   const el = document.getElementById('entryFlash');
@@ -2913,13 +2578,13 @@ function bindHistoryDetail(tbodyId) {
         : '<span class="dc-note">无</span>';
       return `<div class="dg-item"><span class="dg-label">${title}</span>${bs}</div>`;
     };
-    const picks = activeTier === UNION_TIER && Array.isArray(r.union) ? [...r.union].sort((x, y) => x - y) : picksOfRow(r, activeTier);
+    const picks = picksOfRow(r, activeTier);
     const colCount = tr.closest('table')?.querySelectorAll('thead th').length || 8;
     tr.insertAdjacentHTML('afterend', `<tr class="detail-row"><td colspan="${colCount}"><div class="detail-groups">
-      ${renderGrp(activeTier === UNION_TIER ? `三组并集 ${picks.length}码` : `推荐 ${picks.length}码`, picks)}
+      ${renderGrp(`推荐 ${picks.length}码`, picks)}
       ${renderGrp('#1 传导', r.hot)}
       ${renderGrp('#2 蓄力', r.cold)}
-      ${renderGrp('#3 杀号池', r.cycle)}
+      ${renderGrp('#3 肖热', r.cycle)}
     </div></td></tr>`);
     btn.textContent = '收起 ▴';
   });
@@ -2932,23 +2597,10 @@ function init() {
   lockHistory = persisted.locks;
   setupBallInputs();
 
-  // 选号依据：默认只显示摘要，可切换完整表
-  const deriveToggle = document.getElementById('deriveToggle');
-  deriveToggle.addEventListener('click', () => {
-    const stack = document.getElementById('tool2Panels');
-    const expanded = stack.classList.toggle('collapsed') === false;
-    deriveToggle.dataset.expanded = expanded ? '1' : '0';
-    deriveToggle.textContent = expanded ? '收起完整表 ▴' : '展开完整表 ▾';
-  });
-
   bindHistoryDetail('historyBody');
   bindHistoryDetail('fullHistoryBody');
 
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-copy]');
-    if (!btn || btn.disabled || btn.dataset.copyBound) return;
-    handleCopyButton(btn);
-  });
+  document.getElementById('copyMainBtn').addEventListener('click', e => handleCopyButton(e.currentTarget));
 
   document.getElementById('openHistoryModal').addEventListener('click', openHistoryModal);
   document.getElementById('closeHistoryModal').addEventListener('click', closeHistoryModal);
@@ -3073,7 +2725,7 @@ function init() {
       lockedPlan = null;
     } else {
       if (!currentPlanData) return;
-      lockedPlan = lockPlanFromModel({ ...currentPlanData.plan, ranked: currentPlanData.ranked }, target, activeTier);
+      lockedPlan = lockPlanFromModel(currentPlanData, target, activeTier);
     }
     if (!saveManual()) return;
     renderLockArea(expectedNextLabel());
@@ -3215,6 +2867,6 @@ window.noteSync = {
 
 init();
 </script>
-<script type="module" src="./src/note-sync.js?v=2026.11.17-mirror1"></script>
+<script type="module" src="./src/note-sync.js?v=2026.11.18-score1"></script>
 </body>
 </html>
