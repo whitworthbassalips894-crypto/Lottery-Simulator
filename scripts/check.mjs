@@ -1,6 +1,7 @@
 // 用 JSDOM 运行实际发布页面，核对评分、互补范围、五档交互与回放。
 import fs from 'node:fs';
 import { JSDOM, VirtualConsole } from 'jsdom';
+import { APP_BUILD } from '../docs/src/constants.js';
 
 const html = fs.readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
 let failed = 0;
@@ -31,9 +32,14 @@ const text = id => el(id).textContent.trim();
 const numbers = selector => Array.from(d.querySelectorAll(selector), e => Number(e.textContent));
 const prefixTiers = [5, 7, 10, 12];
 const tiers = [...prefixTiers, 18];
-const switchTo = tier => d.querySelector(`.tier-btn[data-tier="${tier}"]`).click();
+const tab = tier => d.querySelector(`.tier-btn[data-tier="${tier}"]`);
+const switchTo = tier => tab(tier).click();
 
 ok(d.title.includes('盲区互补助手') && text('appTitle').includes('盲区互补助手'), '页头和标题');
+const sw = fs.readFileSync(new URL('../docs/sw.js', import.meta.url), 'utf8');
+const versionedUrls = [...d.querySelectorAll('link[rel="manifest"], script[type="module"][src]')].map(e => new URL(e.href || e.src));
+ok(text('footerVersion') === APP_BUILD && d.querySelector('meta[name="app-version"]').content === `v${APP_BUILD}`
+  && versionedUrls.every(url => url.searchParams.get('v') === APP_BUILD) && sw.includes(`const BUILD_ID = '${APP_BUILD}'`), `页脚、资源和缓存版本一致：${APP_BUILD}`);
 ok([text('zeroOverlapLine'), text('zeroOverlapTag')].every(t => t.includes('零重叠')), '显示互补范围');
 ok(!d.querySelector('#deriveFold, #deriveToggle, #tool2Panels, #tool2Summary') && !/选号依据|杀[号码]/.test(html), '旧面板和旧排除文案均已移除');
 ok(same(Array.from(d.querySelectorAll('.tier-btn'), b => +b.dataset.tier), tiers), '五个评分档位');
@@ -47,30 +53,40 @@ ok(fixture.points.get(1) === 75 && fixture.points.get(2) === 49 && fixture.point
 ok(same(fixture.ranked.slice(0, 3), [1, 2, 3]) && fixture.points.get(3) === fixture.points.get(18),
   '组内同分同奖，总分相同按号码升序');
 
+ok(same(w.picksOfRow({ union: [32, 5, 14, 5], ranked: [14, 32] }, 18), [5, 14, 32]), '并集取号只读当期 union，去重并按号码升序');
+
 const recs = w.usableRecordsOf(w.allRecords());
 const next = w.parseLabel(w.expectedNextLabel());
 const nextDate = w.periodToDate(next.year, next.periodNum);
 const current = w.computeBlindPlan(recs, recs.length, next.year, next.periodNum, nextDate);
 let rangeOk = true, prefixOk = true, unionOk = true, over18 = 0, below18 = 0, extraHits = 0;
+let outsidePoolPeriods = 0;
+const unionSizes = [];
 for (let i = 0; i < recs.length; i++) {
   const r = recs[i], row = w.cacheReplayRow(recs, i);
   const base = w.runTool2At(recs, i, r.year, r.periodNum, r.date);
   const groups = [row.hot, row.cold, row.cycle];
   const expectedUnion = ascending(new Set(groups.flat()));
   const picks = w.picksOfRow(row, 18);
-  rangeOk &&= groups.every(g => g.length === 7 && new Set(g).size === 7)
-    && !expectedUnion.some(n => base.union.includes(n)) && same(ascending(row.ranked), expectedUnion);
+  if (expectedUnion.some(n => !Number.isInteger(n) || n < 1 || n > 49 || base.union.includes(n))) outsidePoolPeriods++;
+  unionSizes.push(picks.length);
+  rangeOk &&= groups.every(g => g.length === 7 && new Set(g).size === 7) && same(ascending(row.ranked), expectedUnion);
   prefixOk &&= prefixTiers.every(t => same(w.picksOfRow(row, t), row.ranked.slice(0, t)))
     && w.picksOfRow(row, 5).every(n => picks.includes(n));
-  unionOk &&= same(row.union, expectedUnion) && same(ascending(picks), expectedUnion)
+  unionOk &&= same(row.union, expectedUnion) && same(picks, expectedUnion)
     && w.tierHitOf(row, 18) === expectedUnion.includes(r.special) && w.tierHitOf(row, 18) === row.hitUnion;
   if (expectedUnion.length > 18) over18++;
   if (expectedUnion.length < 18) below18++;
   if (w.tierHitOf(row, 18) && row.ranked.indexOf(r.special) >= 18) extraHits++;
 }
-ok(rangeOk && recs.length >= 1700, `逐期回放 ${recs.length} 期：三组候选与工具2零重叠`);
+ok(rangeOk && recs.length >= 1700 && outsidePoolPeriods === 0, `逐期回放 ${recs.length} 期：越界（含与工具2重叠）${outsidePoolPeriods} 期`);
+const last1700 = unionSizes.slice(-1700);
+const mean = last1700.reduce((sum, n) => sum + n, 0) / last1700.length;
+const min = Math.min(...last1700), max = Math.max(...last1700);
+ok(last1700.length === 1700 && min === 12 && max === 21 && Math.abs(mean - 16.4) < 0.1,
+  `最近 ${last1700.length} 期：并集 ${min}～${max} 码，平均 ${mean.toFixed(2)} 码`);
 ok(prefixOk, '5/7/10/12 档仍是总分前缀，5 档始终包含在并集档内');
-ok(unionOk && over18 > 0 && below18 > 0, `18 档等于当期完整去重并集：${over18} 期超过 18 码，第 19 名及以后命中 ${extraHits} 期`);
+ok(unionOk && over18 > 0 && below18 > 0, `第五档等于当期完整去重并集：${over18} 期超过 18 码，第 19 名及以后命中 ${extraHits} 期`);
 
 // 独立取每期之前的历史作为输入，与页面上的逐期回放、摘要核对。
 const recent = recs.slice(-30).reverse().map((r, j) => {
@@ -80,21 +96,24 @@ const recent = recs.slice(-30).reverse().map((r, j) => {
 });
 for (const tier of tiers) {
   switchTo(tier);
-  const expected = tier === 18 ? current.ranked : current.ranked.slice(0, tier);
+  const expected = tier === 18 ? current.union : current.ranked.slice(0, tier);
+  const tabText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码 高分前${tier}`;
+  const tierText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码档`;
+  ok(tab(tier).textContent.trim() === tabText && d.querySelector('.pick-heading b').textContent === `当前${tierText}`, `${tabText}：档位及主推标题`);
   const copy = ascending(expected).map(w.pad2).join(',');
   el('copyMainBtn').click();
   ok(same(numbers('#optHero .ball'), expected) && same(Array.from(d.querySelectorAll('.pick-score'), e => parseInt(e.textContent)), expected.map(n => current.points.get(n)))
-    && copied === copy && d.querySelector('.copy-preview code').textContent === copy, `${tier}码档：展示得分和复制号码一致`);
+    && copied === copy && d.querySelector('.copy-preview code').textContent === copy, `${tierText}：展示得分和复制号码一致`);
   const hits = recent.map(r => (tier === 18 ? r.union : r.ranked.slice(0, tier)).includes(r.special));
   const hitLabel = tier === 18 ? '三组并集中' : `当前${tier}码档命中`;
   const rows = [...d.querySelectorAll('#historyBody tr.main-row')];
   ok(rows.length === 30 && rows.every((tr, j) => tr.dataset.lbl === recent[j].label && !!tr.querySelector('.tier-hit') === hits[j])
-    && text('recent30Summary') === `最近 30 期 · ${hitLabel} ${hits.filter(Boolean).length} 期`, `${tier}码档：近30期倒序明细与命中数正确`);
+    && text('recent30Summary') === `最近 30 期 · ${hitLabel} ${hits.filter(Boolean).length} 期`, `${tierText}：近30期倒序明细与命中数正确`);
 }
 
 const heading = `当前并集（${current.union.length}码）`;
 ok(text('recentTierColHead') === heading && text('modalTableTierHead') === heading && text('modalYearlyTierHead') === heading + '并集去重'
-  && d.querySelector('.tier-btn.active small').textContent === '并集全取', '并集档按钮及首页、历史、年度表头一致');
+  && w.tierLabel(18) === `并集全取 ${current.union.length}码`, '并集档实际码数与首页、历史、年度表头一致');
 ok(text('recentHitBadge') === `近20期三组并集中 ${recent.slice(0, 20).filter(r => r.union.includes(r.special)).length} 期`, '参考信号按近20期完整并集计算');
 
 function enterDraw(nums) {
@@ -126,12 +145,17 @@ const wide = w.computeBlindPlan(updated, updated.length, following.year, followi
 const union = ascending(new Set(Object.values(wide.groups).flat()));
 const count = union.length, lockText = `已锁定 三组并集 ${count} 码`;
 el('copyMainBtn').click();
-ok(count > 18 && same(numbers('#optHero .ball'), wide.ranked) && text('optHero').includes(`三组共 ${count} 个候选 · 并集全取`)
+ok(count > 18 && same(numbers('#optHero .ball'), union) && text('optHero').includes(`三组共 ${count} 个候选 · 并集全取`)
+  && tab(18).textContent.trim() === `并集全取 ${count}码` && text('recentTierColHead') === `当前并集（${count}码）`
   && /^\d{2}(,\d{2})*$/.test(copied) && copied === union.map(n => String(n).padStart(2, '0')).join(',') && d.querySelector('.copy-preview code').textContent === copied,
   `并集大于18时完整展示并复制 ${count} 码：两位数字、英文逗号、升序、无重复`);
 el('lockBtn').click();
 switchTo(5);
-ok(text('lockCurrent').includes(lockText) && same(numbers('#lockCurrent .lock-ball'), union), '锁定卡片保留当期完整并集和实际码数');
+ok(text('lockCurrent').includes(lockText) && same(numbers('#lockCurrent .lock-ball'), union) && tab(18).textContent.trim() === `并集全取 ${count}码`, '锁定卡片保留当期完整并集和实际码数');
+// 旧快照恰好有 18 个号码，也不能靠码数反推出它用了并集档。
+const saved18 = union.slice(0, 18);
+const unmarked = w.sanitizeLockSnapshot({ label: following.label, opt: saved18, union: saved18 });
+ok(unmarked.tier == null && w.lockedTierLabel(unmarked, unmarked.picks) === '18 码', '无档位的旧锁定按实际号码数显示');
 const sp = wide.ranked[18];
 const legacy = w.sanitizeLockSnapshot({ label: following.label, tier: 18, picks: wide.ranked.slice(0, 18), union, special: sp });
 ok(!legacy.hitPicks && legacy.hitUnion && !w.lockedTierLabel(legacy, legacy.picks).includes('三组并集'), '旧版前18快照不改号、不误标为完整并集');
@@ -140,7 +164,7 @@ ok(text('lockHistory').includes(lockText + '命中'), '锁定记录按原并集�
 switchTo(18);
 d.querySelector('#historyBody button[data-exp]').click();
 const detail = '#historyBody .detail-row .dg-item:first-child';
-ok(same(numbers(detail + ' .ball'), wide.ranked) && d.querySelector(detail + ' .dg-label').textContent === `三组并集 ${count}码`, '逐期展开显示当期完整并集及码数');
+ok(same(numbers(detail + ' .ball'), union) && d.querySelector(detail + ' .dg-label').textContent === `三组并集 ${count}码`, '逐期展开显示当期完整并集及码数');
 el('openHistoryModal').click();
 const total = w.usableRecordsOf(w.allRecords()).length;
 const deadline = Date.now() + 30000;
