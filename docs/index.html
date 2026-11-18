@@ -669,7 +669,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </div>
   </section>
 
-  <div class="foot-note">盲区互补版 · 内核与工具2 三组并集零重叠 ｜ 仅供历史数据统计参考，每期开奖独立随机，请理性娱乐。</div>
+  <footer class="foot-note">盲区互补版 · 内核与工具2 三组并集零重叠 ｜ 仅供历史数据统计参考，每期开奖独立随机，请理性娱乐。<br>版本 <span id="footerVersion"></span></footer>
 </div>
 
 <!-- 弹窗 1：完整历史明细（全部 1779+ 期） -->
@@ -1155,7 +1155,7 @@ function sanitizeLockSnapshot(raw) {
   const effectivePicks = picks.length ? picks : opt;
   if (!effectivePicks.length) return null;
   const tierVal = Number(raw.tier);
-  const tier = TIER_SIZES.includes(tierVal) ? tierVal : effectivePicks.length;
+  const tier = TIER_SIZES.includes(tierVal) ? tierVal : null; // 旧快照的号码数不是档位标记。
   const stamp = Date.parse(String(raw.createdAt || ''));
   const createdAt = Number.isFinite(stamp) ? new Date(stamp).toISOString() : new Date().toISOString();
   const special = Number(raw.special);
@@ -1879,12 +1879,9 @@ let currentPlanData = null;
 let replayTimer = null;
 let replayBusy = false;
 
-// 并集档不限制码数；沿用总分展示顺序，不改变原始排名。
+// 并集档取当期全部候选，按号码升序；其余档保留总分排名顺序。
 function picksOfRow(row, tier) {
-  if (tier === UNION_TIER) {
-    const union = new Set(row.union);
-    return row.ranked.filter(n => union.has(n));
-  }
+  if (tier === UNION_TIER) return [...new Set(row.union)].sort((a, b) => a - b);
   return row.ranked.slice(0, tier);
 }
 
@@ -1914,10 +1911,11 @@ function renderTopBar() {
 
 function renderTierTabs() {
   const wrap = document.getElementById('tierTabs');
-  const available = currentPlanData.ranked.length;
-  wrap.innerHTML = TIER_SIZES.map(size => {
-    const note = size === UNION_TIER ? '并集全取' : size > available ? `实选${available}码` : `高分前${size}`;
-    return `<button type="button" class="tier-btn${size === activeTier ? ' active' : ''}" data-tier="${size}" role="tab" aria-selected="${size === activeTier}">${size}码<small>${note}</small></button>`;
+  wrap.innerHTML = TIER_SIZES.map(tier => {
+    const isUnion = tier === UNION_TIER;
+    const title = isUnion ? '并集全取' : `${tier}码`;
+    const note = isUnion ? `${currentPlanData.union.length}码` : `高分前${tier}`;
+    return `<button type="button" class="tier-btn${tier === activeTier ? ' active' : ''}" data-tier="${tier}" role="tab" aria-selected="${tier === activeTier}">${title} <small>${note}</small></button>`;
   }).join('');
   wrap.querySelectorAll('button[data-tier]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1960,9 +1958,13 @@ function renderPicks() {
   copyBtn.disabled = picks.length === 0;
 }
 
-function tierLabel(tier, count) {
-  if (tier === UNION_TIER) return count == null ? '三组并集' : `并集（${count}码）`;
-  return `${tier}码档${count == null || count === tier ? '' : `（实选${count}码）`}`;
+function tierLabel(tier, count = currentPlanData?.union.length ?? 0) {
+  return tier === UNION_TIER ? `并集全取 ${count}码` : `${tier}码档`;
+}
+
+// 跨期命中统计不标注码数：每期的并集大小不同。
+function tierHitLabel(tier) {
+  return tier === UNION_TIER ? '三组并集' : tierLabel(tier);
 }
 
 function recentPlanRows(count) {
@@ -2025,7 +2027,7 @@ function renderSignal() {
   const hit20 = last20.filter(r => tierHitOf(r, activeTier)).length;
 
   document.getElementById('losingStreakBadge').textContent = `当前连错 ${streak} 期`;
-  document.getElementById('recentHitBadge').textContent = `近${last20.length}期${tierLabel(activeTier)}中 ${hit20} 期`;
+  document.getElementById('recentHitBadge').textContent = `近${last20.length}期${tierHitLabel(activeTier)}中 ${hit20} 期`;
 
   const banner = document.getElementById('signalBanner');
   const textEl = document.getElementById('signalText');
@@ -2072,10 +2074,11 @@ function renderMainPick() {
 }
 
 function lockedTierLabel(lock, picks) {
-  if (lock.tier !== UNION_TIER) return tierLabel(lock.tier, picks.length);
-  // 旧版 18 档快照可能只锁了前 18 个，不把它当作完整并集。
+  if (lock.tier == null) return `${picks.length} 码`;
+  if (lock.tier !== UNION_TIER) return tierLabel(lock.tier);
+  // 旧版可能只锁了前 18 个，不把部分快照当作完整并集。
   const fullUnion = picks.length === lock.union.length && picks.every(n => lock.union.includes(n));
-  return fullUnion ? `三组并集 ${picks.length} 码` : `旧18码档（实选${picks.length}码）`;
+  return fullUnion ? `三组并集 ${picks.length} 码` : `旧快照 ${picks.length} 码`;
 }
 
 function renderLockArea(targetLabel) {
@@ -2110,11 +2113,10 @@ function renderLockArea(targetLabel) {
   document.getElementById('lockHistory').innerHTML = logs.length ? logs.map(log => {
     const when = new Date(log.archivedAt || log.createdAt).toLocaleString('zh-CN');
     const picks = (log.picks && log.picks.length) ? log.picks : log.opt;
-    const isUnion = log.tier === UNION_TIER;
-    const label = isUnion ? `已锁定 ${lockedTierLabel(log, picks)}` : tierLabel(log.tier, picks.length);
+    const label = lockedTierLabel(log, picks);
     const result = log.special
-      ? `特码 ${lockBallHtml(log.special)} · ${label}${log.hitPicks ? '命中' : '未中'}`
-      : `${isUnion ? `${label} · ` : ''}${log.stale ? '未开奖前已过期 · 快照已存档' : '锁定快照'}`;
+      ? `特码 ${lockBallHtml(log.special)} · 已锁定 ${label}${log.hitPicks ? '命中' : '未中'}`
+      : `已锁定 ${label} · ${log.stale ? '未开奖前已过期 · 快照已存档' : '锁定快照'}`;
     return `<div class="lock-record"><strong>${escapeHtml(log.label)}</strong> &nbsp; ${result}<br><small>锁定于 ${escapeHtml(when)}（本机时间）</small><div class="numbers">${picks.map(lockBallHtml).join('')}</div></div>`;
   }).join('') : '<div class="empty">暂无锁定记录</div>';
 }
@@ -2175,7 +2177,7 @@ function renderHeatSection(usable) {
 
 function renderHistoryHead() {
   const isUnion = activeTier === UNION_TIER;
-  const label = `当前${tierLabel(activeTier, isUnion ? currentPlanData?.union.length : undefined)}`;
+  const label = isUnion ? `当前并集（${currentPlanData?.union.length ?? 0}码）` : `当前${tierLabel(activeTier)}`;
   document.getElementById('recentTierColHead').textContent = label;
   document.getElementById('modalTableTierHead').textContent = label;
   document.getElementById('modalYearlyTierHead').innerHTML = `${label}<small>${isUnion ? '并集去重' : '按分截取'}</small>`;
@@ -2454,7 +2456,7 @@ function showEntryFlash(record, usable) {
   const idx = usable.findIndex(d => d.label === record.label);
   const snap = idx >= 0 ? computeHeatSnapshot(usable, idx, 'special') : null;
   const hits = [];
-  if (rec && tierHitOf(rec, activeTier)) hits.push(tierLabel(activeTier));
+  if (rec && tierHitOf(rec, activeTier)) hits.push(tierHitLabel(activeTier));
   if (rec?.hitHot) hits.push('#1 传导');
   if (rec?.hitCold) hits.push('#2 蓄力');
   if (rec?.hitCycle) hits.push('#3 肖热');
@@ -2610,6 +2612,7 @@ function bindHistoryDetail(tbodyId) {
 }
 
 function init() {
+  document.getElementById('footerVersion').textContent = APP_BUILD;
   const persisted = loadManual();
   manualRecords = persisted.records;
   lockedPlan = persisted.locked;
