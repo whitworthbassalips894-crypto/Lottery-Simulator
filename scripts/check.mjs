@@ -34,6 +34,15 @@ const prefixTiers = [5, 7, 10, 12];
 const tiers = [...prefixTiers, 18];
 const tab = tier => d.querySelector(`.tier-btn[data-tier="${tier}"]`);
 const switchTo = tier => tab(tier).click();
+const readSources = chip => Array.from(chip.querySelectorAll('.pick-source'), label => label.textContent);
+function cardsMatch(picks, groups) {
+  const chips = [...d.querySelectorAll('#optHero .pick-chip')];
+  const sources = [[groups.hot, '正码传导'], [groups.cold, '中段蓄力'], [groups.cycle, '肖热透支']];
+  return same(numbers('#optHero .ball'), picks) && chips.length === picks.length && chips.every((chip, i) => {
+    const expected = sources.filter(([nums]) => nums.includes(picks[i])).map(([, name]) => name);
+    return same(readSources(chip), expected) && chip.textContent.replace(/\s/g, '') === w.pad2(picks[i]) + expected.join('');
+  });
+}
 
 ok(d.title.includes('盲区互补助手') && text('appTitle').includes('盲区互补助手'), '页头和标题');
 const sw = fs.readFileSync(new URL('../docs/sw.js', import.meta.url), 'utf8');
@@ -45,13 +54,17 @@ ok(!d.querySelector('#deriveFold, #deriveToggle, #tool2Panels, #tool2Summary') &
 ok(same(Array.from(d.querySelectorAll('.tier-btn'), b => +b.dataset.tier), tiers), '五个评分档位');
 
 // 两个不同量纲、组内并列的策略，加一个组内原分递增的策略。
-const fixture = w.scoreStrategyPicks({ hot: [1,2,3,4,5,6,7], cold: [1,8,9,10,11,12,13], cycle: [1,2,14,15,16,17,18] }, {
+const fixtureGroups = { hot: [1,2,3,4,5,6,7], cold: [1,8,9,10,11,12,13], cycle: [1,2,14,15,16,17,18] };
+const fixture = w.scoreStrategyPicks(fixtureGroups, {
   hot: Array(50).fill(1), cold: Array(50).fill(100), cycle: Array.from({ length: 50 }, (_, n) => n)
 });
 ok(fixture.points.get(1) === 75 && fixture.points.get(2) === 49 && fixture.points.get(14) === 23,
   '三策略都正向加分：跨组相加，第三组独有号码也得分');
 ok(same(fixture.ranked.slice(0, 3), [1, 2, 3]) && fixture.points.get(3) === fixture.points.get(18),
   '组内同分同奖，总分相同按号码升序');
+const sampleCards = d.createElement('div');
+sampleCards.innerHTML = [1, 2, 14].map(n => w.pickChipHtml(n, fixtureGroups)).join('');
+ok(same(Array.from(sampleCards.children, readSources), [['正码传导', '中段蓄力', '肖热透支'], ['正码传导', '肖热透支'], ['肖热透支']]), '多组推荐时逐一标注全部来源，单组不多标');
 
 ok(same(w.picksOfRow({ union: [32, 5, 14, 5], ranked: [14, 32] }, 18), [5, 14, 32]), '并集取号只读当期 union，去重并按号码升序');
 
@@ -100,10 +113,11 @@ for (const tier of tiers) {
   const tabText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码 高分前${tier}`;
   const tierText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码档`;
   ok(tab(tier).textContent.trim() === tabText && d.querySelector('.pick-heading b').textContent === `当前${tierText}`, `${tabText}：档位及主推标题`);
-  const copy = ascending(expected).map(w.pad2).join(',');
+  const copy = ascending(expected).map(w.pad2).join('，');
   el('copyMainBtn').click();
-  ok(same(numbers('#optHero .ball'), expected) && same(Array.from(d.querySelectorAll('.pick-score'), e => parseInt(e.textContent)), expected.map(n => current.points.get(n)))
-    && copied === copy && d.querySelector('.copy-preview code').textContent === copy, `${tierText}：展示得分和复制号码一致`);
+  ok(cardsMatch(expected, current.groups), `${tierText}：号码顺序不变，下方只标注推荐策略`);
+  ok(copied === copy && d.querySelector('.copy-preview code').textContent === copy && d.querySelector('.copy-preview').textContent.includes('中文逗号分隔'),
+    `${tierText}：预览与实际复制文本一致，使用中文逗号`);
   const hits = recent.map(r => (tier === 18 ? r.union : r.ranked.slice(0, tier)).includes(r.special));
   const hitLabel = tier === 18 ? '三组并集中' : `当前${tier}码档命中`;
   const rows = [...d.querySelectorAll('#historyBody tr.main-row')];
@@ -145,10 +159,10 @@ const wide = w.computeBlindPlan(updated, updated.length, following.year, followi
 const union = ascending(new Set(Object.values(wide.groups).flat()));
 const count = union.length, lockText = `已锁定 三组并集 ${count} 码`;
 el('copyMainBtn').click();
-ok(count > 18 && same(numbers('#optHero .ball'), union) && text('optHero').includes(`三组共 ${count} 个候选 · 并集全取`)
+ok(count > 18 && cardsMatch(union, wide.groups) && text('optHero').includes(`三组共 ${count} 个候选 · 并集全取`)
   && tab(18).textContent.trim() === `并集全取 ${count}码` && text('recentTierColHead') === `当前并集（${count}码）`
-  && /^\d{2}(,\d{2})*$/.test(copied) && copied === union.map(n => String(n).padStart(2, '0')).join(',') && d.querySelector('.copy-preview code').textContent === copied,
-  `并集大于18时完整展示并复制 ${count} 码：两位数字、英文逗号、升序、无重复`);
+  && /^\d{2}(，\d{2})*$/.test(copied) && copied === union.map(n => String(n).padStart(2, '0')).join('，') && d.querySelector('.copy-preview code').textContent === copied,
+  `并集大于18时完整展示并复制 ${count} 码：两位数字、中文逗号、升序、无重复`);
 el('lockBtn').click();
 switchTo(5);
 ok(text('lockCurrent').includes(lockText) && same(numbers('#lockCurrent .lock-ball'), union) && tab(18).textContent.trim() === `并集全取 ${count}码`, '锁定卡片保留当期完整并集和实际码数');
