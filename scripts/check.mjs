@@ -34,13 +34,21 @@ const prefixTiers = [5, 7, 10, 12];
 const tiers = [...prefixTiers, 18];
 const tab = tier => d.querySelector(`.tier-btn[data-tier="${tier}"]`);
 const switchTo = tier => tab(tier).click();
+const strategies = [['hot', '正码传导'], ['cold', '中段蓄力'], ['cycle', '肖热透支']];
 const readSources = chip => Array.from(chip.querySelectorAll('.pick-source'), label => label.textContent);
 function cardsMatch(picks, groups) {
   const chips = [...d.querySelectorAll('#optHero .pick-chip')];
-  const sources = [[groups.hot, '正码传导'], [groups.cold, '中段蓄力'], [groups.cycle, '肖热透支']];
   return same(numbers('#optHero .ball'), picks) && chips.length === picks.length && chips.every((chip, i) => {
-    const expected = sources.filter(([nums]) => nums.includes(picks[i])).map(([, name]) => name);
+    const expected = strategies.filter(([group]) => groups[group].includes(picks[i])).map(([, name]) => name);
     return same(readSources(chip), expected) && chip.textContent.replace(/\s/g, '') === w.pad2(picks[i]) + expected.join('');
+  });
+}
+
+function groupDetailsMatch(groups, label) {
+  const rows = [...el('strategyGroups').children];
+  return text('strategyPeriod') === label && rows.length === strategies.length && strategies.every(([key, name], i) => {
+    const balls = Array.from(rows[i].querySelectorAll('dd .ball'), b => b.textContent);
+    return rows[i].querySelector('dt')?.textContent === `#${i + 1} ${name}` && same(balls, ascending(groups[key]).map(w.pad2));
   });
 }
 
@@ -107,8 +115,14 @@ const recent = recs.slice(-30).reverse().map((r, j) => {
   const { ranked, union } = w.computeBlindPlan(past, past.length, r.year, r.periodNum, r.date);
   return { ...r, ranked, union };
 });
+const fold = el('strategyFold'), toggle = fold.querySelector('summary');
+ok(!fold.hidden && !fold.open && toggle.textContent.includes('三策略号码明细'), '本期三策略明细默认收起');
+toggle.click();
+ok(fold.open && groupDetailsMatch(current.groups, next.label), '点开显示当期三个策略各自的完整 7 码，跨组同号分别保留');
+let groupsStable = true;
 for (const tier of tiers) {
   switchTo(tier);
+  groupsStable &&= fold.open && groupDetailsMatch(current.groups, next.label);
   const expected = tier === 18 ? current.union : current.ranked.slice(0, tier);
   const tabText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码 高分前${tier}`;
   const tierText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码档`;
@@ -124,6 +138,8 @@ for (const tier of tiers) {
   ok(rows.length === 30 && rows.every((tr, j) => tr.dataset.lbl === recent[j].label && !!tr.querySelector('.tier-hit') === hits[j])
     && text('recent30Summary') === `最近 30 期 · ${hitLabel} ${hits.filter(Boolean).length} 期`, `${tierText}：近30期倒序明细与命中数正确`);
 }
+
+ok(groupsStable, '切换五档不截取分组号码，也不收起已展开的明细');
 
 const heading = `当前并集（${current.union.length}码）`;
 ok(text('recentTierColHead') === heading && text('modalTableTierHead') === heading && text('modalYearlyTierHead') === heading + '并集去重'
@@ -157,6 +173,9 @@ ok(same(w.sanitizeLockSnapshot({ label: next.label, opt: saved }).picks, saved),
 const updated = w.usableRecordsOf(w.allRecords());
 const wide = w.computeBlindPlan(updated, updated.length, following.year, following.periodNum, followingDate);
 const union = ascending(new Set(Object.values(wide.groups).flat()));
+ok(fold.open && groupDetailsMatch(wide.groups, following.label), '录入开奖后分组明细自动切换到新目标期及其实际提名');
+toggle.click();
+ok(!fold.open, '再次点击可收起三策略明细');
 const count = union.length, lockText = `已锁定 三组并集 ${count} 码`;
 el('copyMainBtn').click();
 ok(count > 18 && cardsMatch(union, wide.groups) && text('optHero').includes(`三组共 ${count} 个候选 · 并集全取`)
