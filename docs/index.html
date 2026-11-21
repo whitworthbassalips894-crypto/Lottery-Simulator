@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>特码盲区互补助手 · 与工具2零重叠</title>
-<meta name="app-version" content="v2026.11.18-score2">
+<meta name="app-version" content="v2026.11.18-score3">
 <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
-<link rel="manifest" href="./manifest.webmanifest?v=2026.11.18-score2">
+<link rel="manifest" href="./manifest.webmanifest?v=2026.11.18-score3">
 <style>
 :root{
   --ink:#0f172a;
@@ -240,7 +240,8 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   background:#fff;border:1px solid var(--line);border-radius:11px;
   padding:9px 5px 7px;text-align:center;
 }
-.pick-score{font-size:12px;font-weight:700;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.pick-sources{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:100%}
+.pick-source{padding:1px 3px;border-radius:4px;background:var(--surface);color:var(--ink-soft);font-size:12px;font-weight:700;line-height:1.4;white-space:nowrap}
 
 .copy-preview{
   margin-top:12px;padding:8px 11px;border-radius:8px;
@@ -485,7 +486,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   .tier-tabs{gap:5px}
   .tier-btn{padding:8px 2px;font-size:12.5px}
   .tier-btn small{font-size:9px}
-  .pick-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .pick-grid{grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:6px}
   .pick-chip{padding:7px 2px 6px}
   .pick-chip .ball.lg{width:33px;height:33px;font-size:13.5px}
   .hero-actions{grid-template-columns:1fr;gap:8px}
@@ -1062,7 +1063,7 @@ const COMPRESSED_DATA = [
 const STORAGE_KEY = 'mark6_tool2_heat_v2';
 const LEGACY_KEY = 'lucky_draws_minimal_v1';
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
-const APP_BUILD = '2026.11.18-score2';
+const APP_BUILD = '2026.11.18-score3';
 const WAVE_LABEL = { red: '红波', blue: '蓝波', green: '绿波' };
 const MAX_LOCK_RECORDS = 200;
 const UNION_TIER = 18;
@@ -1867,10 +1868,10 @@ function heatCellStyle(freq, scope) {
 function heatHotThreshold(scope) { return scope === 'special' ? 5 : 18; }
 
 /* ==================== 各模块渲染 ==================== */
-const THERMO_DEFS = [
-  { key: 'hitHot', code: '#1', name: '传导', color: '#e54b4b', desc: '正码传导 7 码' },
-  { key: 'hitCold', code: '#2', name: '蓄力', color: '#3b82f6', desc: '中段蓄力 7 码' },
-  { key: 'hitCycle', code: '#3', name: '肖热', color: '#10a878', desc: '肖热透支 7 码' }
+const STRATEGY_DEFS = [
+  { group: 'hot', hitKey: 'hitHot', code: '#1', name: '传导', color: '#e54b4b', fullName: '正码传导' },
+  { group: 'cold', hitKey: 'hitCold', code: '#2', name: '蓄力', color: '#3b82f6', fullName: '中段蓄力' },
+  { group: 'cycle', hitKey: 'hitCycle', code: '#3', name: '肖热', color: '#10a878', fullName: '肖热透支' }
 ];
 const RECENT_HIT_WINDOW = 30;
 
@@ -1933,6 +1934,12 @@ function renderTierTabs() {
   });
 }
 
+function pickChipHtml(n, groups) {
+  const sources = STRATEGY_DEFS.filter(def => groups[def.group].includes(n))
+    .map(def => `<span class="pick-source">${def.fullName}</span>`).join(' ');
+  return `<div class="pick-chip">${ballHtml(n, 'lg')}<div class="pick-sources">${sources}</div></div>`;
+}
+
 function renderPicks() {
   const host = document.getElementById('optHero');
   const copyBtn = document.getElementById('copyMainBtn');
@@ -1943,15 +1950,15 @@ function renderPicks() {
     return;
   }
   const picks = picksOfRow(currentPlanData, activeTier);
-  const copyText = picks.slice().sort((a, b) => a - b).map(pad2).join(',');
+  const copyText = picks.slice().sort((a, b) => a - b).map(pad2).join('，');
   host.innerHTML = `
     <div class="pick-heading">
       <b>当前${tierLabel(activeTier, picks.length)}</b>
       <span>三组共 ${currentPlanData.union.length} 个候选 · ${activeTier === UNION_TIER ? '并集全取' : '按总分排序'}</span>
     </div>
-    <div class="pick-grid">${picks.map(n => `<div class="pick-chip">${ballHtml(n, 'lg')}<span class="pick-score">${currentPlanData.points.get(n)} 分</span></div>`).join('')}</div>
+    <div class="pick-grid">${picks.map(n => pickChipHtml(n, currentPlanData.groups)).join('')}</div>
     <div class="copy-preview">
-      <span>复制格式（号码升序，英文逗号分隔）</span>
+      <span>复制格式（号码升序，中文逗号分隔）</span>
       <code>${copyText}</code>
     </div>`;
   copyBtn.setAttribute('data-copy', copyText);
@@ -1997,8 +2004,8 @@ function renderThermometer() {
   document.getElementById('thermoRangeTag').textContent =
     `最近 ${rows.length} 期（${rows[0].label} ~ ${rows.at(-1).label}）· 不影响算法`;
 
-  host.innerHTML = THERMO_DEFS.map(def => {
-    const hits = rows.filter(r => r[def.key]).length;
+  host.innerHTML = STRATEGY_DEFS.map(def => {
+    const hits = rows.filter(r => r[def.hitKey]).length;
     const rate = rows.length ? hits / rows.length : 0;
     const pct = (rate * 100).toFixed(1);
     const level = rate >= 0.30 ? { cls: 'warm', text: '偏热' }
@@ -2006,7 +2013,7 @@ function renderThermometer() {
         : { cls: 'cool', text: '偏冷' };
     return `<div class="thermo-row">
       <div class="thermo-top">
-        <span class="thermo-name"><span style="color:${def.color}">●</span>${def.code} ${def.name}<span class="thermo-desc">· ${def.desc}</span></span>
+        <span class="thermo-name"><span style="color:${def.color}">●</span>${def.code} ${def.name}<span class="thermo-desc">· ${def.fullName} 7 码</span></span>
         <span class="thermo-stats">
           <span class="thermo-count">${hits}/${rows.length} 期</span>
           <span class="thermo-rate">${pct}%</span>
@@ -2039,9 +2046,9 @@ function renderSignal() {
     return;
   }
 
-  const rankedDefs = THERMO_DEFS.map(def => ({
+  const rankedDefs = STRATEGY_DEFS.map(def => ({
     ...def,
-    hits: rows.filter(r => r[def.key]).length
+    hits: rows.filter(r => r[def.hitKey]).length
   })).sort((a, b) => b.hits - a.hits);
   const best = rankedDefs[0];
   const rate = (best.hits / rows.length * 100).toFixed(0);
@@ -2889,6 +2896,6 @@ window.noteSync = {
 
 init();
 </script>
-<script type="module" src="./src/note-sync.js?v=2026.11.18-score2"></script>
+<script type="module" src="./src/note-sync.js?v=2026.11.18-score3"></script>
 </body>
 </html>
