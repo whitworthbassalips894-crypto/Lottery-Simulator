@@ -8,7 +8,7 @@
  *  4. BUILD_ID 必须与 src/constants.js 的 APP_BUILD、index.html 的 ?v= 参数一致，由单测自动校验。
  */
 
-const BUILD_ID = '2026.11.18-score4';
+const BUILD_ID = '2026.11.23-hero1';
 const CACHE_PREFIX = 'mark6-nst-';
 const CACHE_NAME = `${CACHE_PREFIX}${BUILD_ID}`;
 
@@ -19,33 +19,15 @@ const SHELL_FILES = [
   './manifest.webmanifest',
   './assets/styles.css',
   './assets/six-tier.css',
-  './src/note-sync.js',
-  './src/six-tier.js',
-  './src/rhythm.js',
-  './src/six-tier-app.js',
-  './src/six-tier-worker.js',
   './assets/icon.svg',
+  // 页面真正 import 的模块（其余 src/*.js 是历史遗留文件，页面并未加载，不再预缓存）
   './src/constants.js',
   './src/combinatorics.js',
   './src/parser.js',
-  './src/strategy.js',
-  './src/dailyfive.js',
-  './src/statistics.js',
-  './src/storage.js',
-  './src/sync.js',
-  './src/china-time.js',
-  './src/copy.js',
   './src/audit.js',
   './src/periods.js',
-  './src/app.js',
-  './src/combined.js',
-  './src/replay-stats.js',
-  './src/replay-worker.js',
-  './src/tool1/dailyfive.js',
-  './src/tool1/strategy.js',
-  './src/tool1/constants.js',
-  './src/tool1/combinatorics.js',
-  './src/tool1/audit.js',
+  './src/sync.js',
+  './src/note-sync.js',
   './data/draws.js',
   './data/draws.json'
 ];

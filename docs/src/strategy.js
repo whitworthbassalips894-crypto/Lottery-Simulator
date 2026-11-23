@@ -157,7 +157,9 @@ export function selectBalancedSeven(scoreMap = {}, opts = {}) {
         const targetMid = size / 2;
         const nextOddDist = Math.abs(st.odd + (isOdd(n) ? 1 : 0) - targetMid);
         const nextBigDist = Math.abs(st.big + (isBig(n) ? 1 : 0) - targetMid);
-        val -= 0.05 * nextOddDist - 0.05 * nextBigDist;
+        // 奇偶、大小都向中位靠拢：两项都是「偏离越小越好」，所以是同号相加。
+        // 旧实现写成 -odd -(-big)，等于让「大小失衡」加分，导致 7 码几乎都挤在小号。
+        val -= 0.05 * nextOddDist + 0.05 * nextBigDist;
 
         if (val > bestVal) {
           bestVal = val;
@@ -170,6 +172,42 @@ export function selectBalancedSeven(scoreMap = {}, opts = {}) {
     if (bestNum == null) break;
     chosen.push(bestNum);
     chosenSet.add(bestNum);
+  }
+
+  /* 贪心兜底修正：逐个挑选时，越到后面越可能「怎么选都越界」，旧实现退回宽松模式，
+     于是声明的奇偶/大小/三区/波色/尾数约束会在不知不觉中被破坏。
+     这里做确定性的「相等交换」修复（只用组外候选号），保证约束真的成立、且同一期结果不变。 */
+  const constraintScore = (list) => {
+    const st = countState(list);
+    let score = 0;
+    for (let z = 1; z <= 3; z++) score += Math.min(st.zones[z], minPerZone) - Math.max(0, st.zones[z] - maxPerZone) * 2;
+    for (const c of ['red', 'blue', 'green']) score += Math.min(st.colors[c], minPerColor) - Math.max(0, st.colors[c] - maxPerColor) * 2;
+    score -= st.tails.reduce((acc, cnt) => acc + Math.max(0, cnt - maxTailRepeat) * 2, 0);
+    if (size === SPECIAL_GROUP_SIZE) {
+      score -= Math.max(0, st.odd - oddRange[1]) * 2 + Math.max(0, oddRange[0] - st.odd) * 2;
+      score -= Math.max(0, st.big - bigRange[1]) * 2 + Math.max(0, bigRange[0] - st.big) * 2;
+    }
+    return score;
+  };
+
+  for (let pass = 0; pass < size * 3; pass++) {
+    const base = constraintScore(chosen);
+    if (base >= 13) break; // 三区 3 + 波色 3 + 尾数 7：理论上限
+    let improved = false;
+    for (const inside of chosen.slice()) {
+      for (const outside of candidates) {
+        if (chosenSet.has(outside)) continue;
+        const trial = chosen.filter((n) => n !== inside).concat(outside);
+        if (constraintScore(trial) <= base) continue;
+        chosen[chosen.indexOf(inside)] = outside;
+        chosenSet.delete(inside);
+        chosenSet.add(outside);
+        improved = true;
+        break;
+      }
+      if (improved) break;
+    }
+    if (!improved) break;
   }
 
   return chosen.sort((a, b) => a - b);
