@@ -61,6 +61,52 @@ ok([text('zeroOverlapLine'), text('zeroOverlapTag')].every(t => t.includes('零�
 ok(!d.querySelector('#deriveFold, #deriveToggle, #tool2Panels, #tool2Summary') && !/选号依据|杀[号码]/.test(html), '旧面板和旧排除文案均已移除');
 ok(same(Array.from(d.querySelectorAll('.tier-btn'), b => +b.dataset.tier), tiers), '五个评分档位');
 
+// —— 首屏决策区（本轮改版新增）——
+ok(!el('heroSection').hidden && d.querySelector('#heroSection').dataset.module === 'main-pick', '主推卡片已上移到首屏');
+const heroText = text('heroMeta');
+ok(/覆盖/.test(heroText) && /命中率/.test(heroText), '首屏显示覆盖码数与理论命中率');
+ok(/每期/.test(text('costLine')) && /返奖率/.test(text('costLine')) && /97\.96%/.test(text('costLine')), '主推下方显示每期成本与返奖率');
+ok(/预计开奖|后开奖|已过/.test(text('heroCountdown')) || /开奖/.test(text('heroCountdown')), '首屏有开奖时间提示');
+
+// —— 粘贴整段开奖文本：期号/日期不能被当成开奖号 ——
+const parsedPaste = w.parseDrawPaste('第321期 2026-11-17 开奖结果：05 12 18 27 33 41 + 特码 07');
+ok(same(parsedPaste.nums, [5,12,18,27,33,41,7]) && parsedPaste.issue === '2026-321' && parsedPaste.date === '2026-11-17',
+  '整段粘贴时只取 7 个开奖号码，期号与日期被识别而非入号');
+ok(same(w.extractDrawNumbers('2026-11-17 322期 03,09,14,22,31,40 + 18'), [3,9,14,22,31,40,18]), '含日期与期号的号码串解析正确');
+ok(same(w.extractDrawNumbers('第 001 期 开奖 01 10 19 28 37 46 49'), [1,10,19,28,37,46,49]), '期号 001 不会被当成号码 01');
+
+// —— 逐格校验给的是可读原因，而不是只抖一下 ——
+el('openDataModal').click();
+w.fillBallsFromText('05 05 50 27 33 41');
+const problems = w.validateBallInputs();
+ok(problems.length === 3 && problems.every(x => typeof x.text === 'string' && x.text.length > 0), '重复号/越界号给出逐格中文原因');
+w.showBallProblems(problems);
+ok(!el('ballProblems').hidden && text('ballProblems').includes('重复'), '错误原因显示在号码格下方');
+w.showBallProblems([]);
+ok(el('ballProblems').hidden, '修正后可清除错误提示');
+el('closeDataModal').click();
+
+// —— 近30期摘要：带理论命中率与置信区间，避免小样本误读 ——
+ok(/理论/.test(text('recent30Baseline')) && /区间/.test(text('recent30Baseline')), '近30期摘要给出理论命中率与 95% 区间');
+
+// —— 三策略温度计：近200期 + 区间条 ——
+ok(d.querySelectorAll('#thermometerList .ci-bar').length === 3 && /95% 置信区间/.test(text('thermometerList')), '三策略温度计给出 95% 置信区间');
+ok(/随机基线/.test(text('thermoBaseline')), '温度计基线文案随样本变化');
+
+// —— 修复缓存按钮（原来 SW 文案提到但页面没有）——
+ok(!!el('repairCacheBtn'), '页面上有「修复缓存」按钮');
+
+// —— Service Worker 预缓存列表不再包含页面未引用的死文件 ——
+const swSrc = fs.readFileSync(new URL('../docs/sw.js', import.meta.url), 'utf8');
+const shellList = [...swSrc.matchAll(/'\.\/(src\/[^']+)'/g)].map(m => m[1]);
+const filesExist = shellList.every(rel => fs.existsSync(new URL(`../docs/${rel}`, import.meta.url)));
+ok(shellList.length > 0 && filesExist, `SW 预缓存只含真实存在的模块（${shellList.length} 个）`);
+ok(!/src\/(six-tier|app|dailyfive|tool1)/.test(swSrc), 'SW 不再预缓存页面未加载的历史文件');
+
+// —— 数据源瘦身：draws.json 只保留 7 个号码字段 ——
+const dbJson = JSON.parse(fs.readFileSync(new URL('../docs/data/draws.json', import.meta.url), 'utf8'));
+ok(dbJson.draws.length >= 1781 && dbJson.draws.every(x => x.numbers.length === 6 && Number.isInteger(x.special)), '数据源仍是完整 1781 期且字段可用');
+
 // 两个不同量纲、组内并列的策略，加一个组内原分递增的策略。
 const fixtureGroups = { hot: [1,2,3,4,5,6,7], cold: [1,8,9,10,11,12,13], cycle: [1,2,14,15,16,17,18] };
 const fixture = w.scoreStrategyPicks(fixtureGroups, {
@@ -127,16 +173,19 @@ for (const tier of tiers) {
   const tabText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码 高分前${tier}`;
   const tierText = tier === 18 ? `并集全取 ${expected.length}码` : `${tier}码档`;
   ok(tab(tier).textContent.trim() === tabText && d.querySelector('.pick-heading b').textContent === `当前${tierText}`, `${tabText}：档位及主推标题`);
-  const copy = ascending(expected).map(w.pad2).join('，');
+  // 复制内容 = 「期号｜N码｜号码」，号码仍是两位 + 中文逗号
+  const numbersText = ascending(expected).map(w.pad2).join('，');
+  const copy = `${next.label}｜${expected.length}码｜${numbersText}`;
   el('copyMainBtn').click();
   ok(cardsMatch(expected, current.groups), `${tierText}：号码顺序不变，下方只标注推荐策略`);
-  ok(copied === copy && d.querySelector('.copy-preview code').textContent === copy && d.querySelector('.copy-preview').textContent.includes('中文逗号分隔'),
-    `${tierText}：预览与实际复制文本一致，使用中文逗号`);
+  ok(copied === copy && d.querySelector('.copy-preview code').textContent === copy && d.querySelector('.copy-preview').textContent.includes('期号 + 码数 + 号码'),
+    `${tierText}：预览与实际复制文本一致，带期号与码数、中文逗号`);
   const hits = recent.map(r => (tier === 18 ? r.union : r.ranked.slice(0, tier)).includes(r.special));
   const hitLabel = tier === 18 ? '三组并集中' : `当前${tier}码档命中`;
   const rows = [...d.querySelectorAll('#historyBody tr.main-row')];
+  const expectSummary = `最近 30 期 · ${hitLabel} ${hits.filter(Boolean).length} 期（${(hits.filter(Boolean).length / 30 * 100).toFixed(1)}%）`;
   ok(rows.length === 30 && rows.every((tr, j) => tr.dataset.lbl === recent[j].label && !!tr.querySelector('.tier-hit') === hits[j])
-    && text('recent30Summary') === `最近 30 期 · ${hitLabel} ${hits.filter(Boolean).length} 期`, `${tierText}：近30期倒序明细与命中数正确`);
+    && text('recent30Summary') === expectSummary, `${tierText}：近30期倒序明细与命中数正确`);
 }
 
 ok(groupsStable, '切换五档不截取分组号码，也不收起已展开的明细');
@@ -180,7 +229,7 @@ const count = union.length, lockText = `已锁定 三组并集 ${count} 码`;
 el('copyMainBtn').click();
 ok(count > 18 && cardsMatch(union, wide.groups) && text('optHero').includes(`三组共 ${count} 个候选 · 并集全取`)
   && tab(18).textContent.trim() === `并集全取 ${count}码` && text('recentTierColHead') === `当前并集（${count}码）`
-  && /^\d{2}(，\d{2})*$/.test(copied) && copied === union.map(n => String(n).padStart(2, '0')).join('，') && d.querySelector('.copy-preview code').textContent === copied,
+  && copied === `${following.label}｜${count}码｜${union.map(n => String(n).padStart(2, '0')).join('，')}` && d.querySelector('.copy-preview code').textContent === copied,
   `并集大于18时完整展示并复制 ${count} 码：两位数字、中文逗号、升序、无重复`);
 el('lockBtn').click();
 switchTo(5);

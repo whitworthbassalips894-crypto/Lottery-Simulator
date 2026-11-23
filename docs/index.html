@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>特码盲区互补助手 · 与工具2零重叠</title>
-<meta name="app-version" content="v2026.11.18-score4">
+<meta name="app-version" content="v2026.11.23-hero1">
 <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
-<link rel="manifest" href="./manifest.webmanifest?v=2026.11.18-score4">
+<link rel="manifest" href="./manifest.webmanifest?v=2026.11.23-hero1">
 <style>
 :root{
   --ink:#0f172a;
@@ -66,6 +66,7 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
 .pill.brand{background:var(--brand-soft);color:var(--brand);font-family:Consolas,"PingFang SC",monospace}
 .pill.subtle{font-weight:600;color:var(--muted);background:#f8fafc;border:1px solid var(--line)}
 .pill.ok{background:#ecfdf5;color:#047857}
+.pill.warn{background:#fff7ed;color:#9a3412}
 
 /* 按钮体系 */
 .btn{
@@ -258,6 +259,26 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
 }
 .hero-actions .btn{min-height:44px;font-size:14px}
 
+.hero-title-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+.hero-title-row h2{font-size:18px}
+.hero-meta{font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:12px}
+.hero-meta strong{color:var(--ink);font-family:Consolas,monospace}
+.hero-meta .hm-sep{color:var(--line-strong);margin:0 4px}
+.hero-meta .hm-warn{color:#b45309;font-weight:700}
+.hero-meta .hm-link{color:var(--brand);font-weight:700;text-decoration:none;border-bottom:1px dashed currentColor}
+.cost-line{margin-top:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-size:12.5px;line-height:1.8;color:var(--muted)}
+.cost-line b{color:var(--ink);font-family:Consolas,monospace}
+.cost-line .cl-row{display:flex;flex-wrap:wrap;gap:4px 14px}
+.cost-line .cl-chip{font-weight:700;color:var(--ink-soft)}
+.cost-line .cl-warn{color:#b45309;font-weight:700}
+.cost-line .cl-note{display:block;margin-top:5px;padding-top:6px;border-top:1px dashed var(--line-strong);font-size:12px}
+.ci-bar{position:relative;height:7px;border-radius:99px;background:#e2e8f0;margin-top:6px;overflow:hidden}
+.ci-range{position:absolute;top:0;bottom:0;background:rgba(37,99,235,.28);border-radius:99px}
+.ci-point{position:absolute;top:-2px;width:3px;height:11px;border-radius:2px;background:var(--brand);transform:translateX(-1.5px)}
+.ci-base{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ef4444;opacity:.85;transform:translateX(-1px)}
+.ci-legend{font-size:11.5px;color:var(--faint);font-weight:600;margin-top:3px}
+.fin-summary{margin-top:12px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.8;color:var(--ink-soft)}
+.fin-summary b{font-family:Consolas,monospace}
 .lock-current{
   margin-top:11px;border:1px solid #a7f3d0;background:#ecfdf5;
   border-radius:10px;padding:10px 12px;font-size:12px;color:#065f46;
@@ -347,6 +368,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   min-width:26px;height:24px;padding:0 5px;border-radius:99px;
   color:#fff;font:800 12px/1 Consolas,monospace;
 }
+.hc-wave{font-style:normal;font-weight:700;opacity:.72;margin-left:1px}
 .heat-cell small{
   display:block;font:700 11px/1.1 "PingFang SC",sans-serif;color:var(--ink-soft);
 }
@@ -446,6 +468,12 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   border:1px solid var(--line);background:#fff;border-radius:99px;
   padding:4px 11px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
 }
+.data-more{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.data-more>summary{padding:9px 12px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;list-style:none}
+.data-more>summary::-webkit-details-marker{display:none}
+.data-more>summary::after{content:'⌄';float:right;transition:transform .2s}
+.data-more[open]>summary::after{transform:rotate(180deg)}
+.data-more .actions{padding:0 12px 12px;margin:0}
 .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
 .search-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .search-input{
@@ -466,6 +494,15 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .balls-plus{font:900 17px Consolas,monospace;color:var(--muted);padding:0 2px 14px}
 .ball-input{width:42px;height:42px;border:2px solid var(--line-strong);border-radius:50%;text-align:center;font:800 15px Consolas,monospace;outline:none;background:#fff;color:var(--ink)}
 .ball-slot.sp .ball-input{border-color:#fca5a5}
+.ball-input.is-error{border-color:var(--hot)!important;box-shadow:0 0 0 3px rgba(229,75,75,.16)}
+.entry-hint{font-size:12.5px;line-height:1.7;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+.entry-hint strong{color:var(--ink)}
+.paste-note{margin:8px 0 0;font-size:12.5px;font-weight:600;line-height:1.6;border-radius:8px;padding:7px 11px}
+.paste-note.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#047857}
+.paste-note.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.ball-problems{margin:9px 0 0;font-size:12.5px;line-height:1.7;border-radius:8px;padding:8px 11px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
+.ball-problems b{display:block;margin-bottom:2px}
+.ball-problems span{display:block}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .entry-flash{margin-top:10px;border-radius:9px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;font-size:12.5px;line-height:1.6;display:none}
 .entry-flash.show{display:block}
@@ -489,7 +526,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   .draw-plus{padding:0 0 14px;font-size:13px}
   .draw-ball-item.is-sp{padding:4px 5px 3px}
   .draw-ball-item.is-sp .ball.xl{width:33px;height:33px;font-size:13.5px}
-  .tier-tabs{gap:5px}
+  .tier-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
   .tier-btn{padding:8px 2px;font-size:12.5px}
   .tier-btn small{font-size:9px}
   .pick-grid{grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:6px}
@@ -508,7 +545,8 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   .history td.col-period{padding-left:7px;font-size:10.5px}
   .history .num{width:20px;height:20px;font-size:9px}
   .history .num.special{width:22px;height:22px;font-size:9.5px;margin-left:2px}
-  .history .nums{gap:1.5px}
+  .history .nums{gap:1.5px;flex-wrap:nowrap}
+  .history .num{flex:0 0 auto}
   .badge{padding:2px 4px;font-size:10px}
   .exp-btn{padding:3px 5px;font-size:10px}
   .modal-backdrop{padding:8px}
@@ -538,6 +576,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
       <div class="top-actions">
         <button class="btn sync" id="syncNow" type="button">一键同步</button>
         <button class="btn ghost" id="openDataModal" type="button">数据管理</button>
+        <button class="btn ghost" id="repairCacheBtn" type="button" title="清空离线缓存并重新加载，页面长期不更新时使用">修复缓存</button>
       </div>
     </div>
 
@@ -555,35 +594,15 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </div>
   </section>
 
-  <!-- 模块 2：近 30 期策略温度计 -->
-  <section class="card" id="thermometerSection" data-module="thermometer">
-    <div class="card-head">
-      <div class="card-title-wrap">
-        <h2>近 30 期盲区温度计</h2>
-        <span class="pill subtle" id="thermoRangeTag">最近 30 期看板 · 不影响算法</span>
-      </div>
+  <!-- 模块 2：下期主推（首屏决策区） -->
+  <section class="card hero-card" id="heroSection" data-module="main-pick" aria-labelledby="heroTitle">
+    <div class="hero-title-row">
+      <h2 id="heroTitle">下期主推</h2>
+      <span class="pill brand" id="heroPeriodTag">--</span>
+      <span class="pill ok" id="heroCountdown">待同步开奖时间</span>
+      <span class="pill ok" id="zeroOverlapTag">零重叠</span>
     </div>
-    <div class="thermo-list" id="thermometerList"></div>
-    <div class="thermo-baseline" id="thermoBaseline">7码单组随机基线 ≈ 14.3% · 30 期样本波动约 ±12pp，短期高低多为随机起伏，暂不足以判断优劣。</div>
-  </section>
-
-  <!-- 模块 3：下期智能主推卡片 -->
-  <section class="card" id="mainPickSection" data-module="main-pick">
-    <div class="card-head">
-      <div class="card-title-wrap">
-        <h2>下期盲区主推</h2>
-        <span class="pill brand" id="recPeriodTag">--</span>
-        <span class="pill ok" id="zeroOverlapTag">零重叠</span>
-      </div>
-      <div class="head-meta" aria-label="波色图例">
-        <span class="wave-legend-inline">
-          <span class="legend-chip"><span class="legend-dot wave-dot" data-wave="red" style="background:#e54b4b"></span>红波</span>
-          <span class="legend-chip"><span class="legend-dot wave-dot" data-wave="blue" style="background:#3b82f6"></span>蓝波</span>
-          <span class="legend-chip"><span class="legend-dot wave-dot" data-wave="green" style="background:#10a878"></span>绿波</span>
-        </span>
-      </div>
-    </div>
-
+    <div class="hero-meta" id="heroMeta"></div>
     <div class="signal-banner blue" id="signalBanner" role="status">
       <div class="signal-left">
         <span class="signal-dot" aria-hidden="true"></span>
@@ -600,9 +619,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </div>
 
     <div class="opt-hero-box" id="optHero"></div>
+    <div class="cost-line" id="costLine"></div>
 
     <div class="hero-actions">
-      <button type="button" class="btn primary" id="copyMainBtn" data-copy="" data-copy-label="一键复制推荐号码">一键复制推荐号码</button>
+      <button type="button" class="btn primary" id="copyMainBtn" data-copy="" data-copy-label="复制本期推荐号码">复制本期号码 + 期号</button>
       <button type="button" class="btn" id="lockBtn">锁定本期</button>
     </div>
 
@@ -636,6 +656,21 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </details>
   </section>
 
+  <div id="finSummary" class="fin-summary" hidden></div>
+
+
+  <!-- 模块 3：三策略命中率（近 200 期，带置信区间） -->
+  <section class="card" id="thermometerSection" data-module="thermometer">
+    <div class="card-head">
+      <div class="card-title-wrap">
+        <h2>三策略命中率（近 200 期）</h2>
+        <span class="pill subtle" id="thermoRangeTag">最近 200 期看板 · 不影响算法</span>
+      </div>
+    </div>
+    <div class="thermo-list" id="thermometerList"></div>
+    <div class="thermo-baseline" id="thermoBaseline"></div>
+  </section>
+
   <!-- 模块 4：近 100 期热度分布 -->
   <section class="card" id="heatSection" data-module="heatmap">
     <div class="card-head">
@@ -666,6 +701,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
       <div class="card-title-wrap">
         <h2>近 30 期命中简表</h2>
         <span class="pill subtle" id="recent30Summary">最近 30 期</span>
+        <span class="pill" id="recent30Baseline"></span>
       </div>
       <button type="button" class="btn ghost recent-head-btn" id="openHistoryModal">查看全部</button>
     </div>
@@ -757,20 +793,31 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </div>
     <div class="modal-body">
       <div>
+        <div class="entry-hint">
+          补录的是<strong>最新已开奖、但还没进底库</strong>的那一期。右边输入框可以直接整段粘贴开奖网站原文，
+          期号、日期、时间会被自动忽略，只取 7 个开奖号码。
+        </div>
         <div class="form-row">
-          <label for="periodLabel">下期期号</label>
+          <label for="periodLabel">要补录的期号</label>
           <input id="periodLabel" class="text-input" maxlength="8" placeholder="2026-320">
-          <input id="quickPaste" class="paste-input" placeholder="粘贴7个开奖号码自动填入">
+          <input id="quickPaste" class="paste-input" placeholder="整段粘贴，如：第320期 05 12 18 27 33 41 + 特码 07">
         </div>
+        <div id="pasteNote" class="paste-note" role="status" aria-live="polite" hidden></div>
         <div class="balls-wrap" id="ballInputs"></div>
+        <div id="ballProblems" class="ball-problems" role="alert" hidden></div>
         <div class="actions">
-          <button class="btn primary" id="submitDraw" type="button">保存本期开奖</button>
+          <button class="btn primary" id="submitDraw" type="button">保存这期开奖</button>
           <button class="btn" id="undoDraw" type="button">撤销上条手动</button>
-          <button class="btn" id="exportBtn" type="button">导出备份</button>
-          <button class="btn" id="importBtn" type="button">导入备份</button>
-          <button class="btn danger" id="clearData" type="button">清空本机新增</button>
-          <input type="file" id="importFile" accept="application/json,.json" hidden>
         </div>
+        <details class="data-more" id="dataMoreFold">
+          <summary>备份、导入与清空</summary>
+          <div class="actions">
+            <button class="btn" id="exportBtn" type="button">导出备份</button>
+            <button class="btn" id="importBtn" type="button">导入备份</button>
+            <button class="btn danger" id="clearData" type="button">清空本机新增</button>
+            <input type="file" id="importFile" accept="application/json,.json" hidden>
+          </div>
+        </details>
         <div id="entryFlash" class="entry-flash"></div>
       </div>
     </div>
@@ -1081,7 +1128,7 @@ const COMPRESSED_DATA = [
 const STORAGE_KEY = 'mark6_tool2_heat_v2';
 const LEGACY_KEY = 'lucky_draws_minimal_v1';
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
-const APP_BUILD = '2026.11.18-score4';
+const APP_BUILD = '2026.11.23-hero1';
 const WAVE_LABEL = { red: '红波', blue: '蓝波', green: '绿波' };
 const MAX_LOCK_RECORDS = 200;
 const UNION_TIER = 18;
@@ -1112,6 +1159,42 @@ const LUNAR_NEW_YEAR_DATES = {
 };
 
 function pad2(n) { return String(n).padStart(2, '0'); }
+
+/** 95% Wilson 置信区间，避免 30 期小样本被当成真实差距 */
+function wilson95(hits, total) {
+  if (!total) return [0, 0];
+  const z = 1.96, p = hits / total, n = total;
+  const denom = 1 + (z * z) / n;
+  const center = (p + (z * z) / (2 * n)) / denom;
+  const margin = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+  return [Math.max(0, center - margin), Math.min(1, center + margin)];
+}
+
+/** 按北京时间取当前时间（不依赖浏览器时区） */
+function beijingNow() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date());
+  const get = type => parts.find(x => x.type === type)?.value || '00';
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;
+}
+
+function drawDeadline(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''))) return null;
+  return new Date(`${dateStr}T${pad2(DRAW_HOUR)}:${pad2(DRAW_MINUTE)}:00+08:00`);
+}
+
+/** 把毫秒差写成「x 小时 y 分」 */
+function humanDuration(ms) {
+  const totalMin = Math.max(0, Math.round(ms / 60000));
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  if (d) return `${d} 天 ${h} 小时`;
+  if (h) return `${h} 小时 ${m} 分`;
+  return `${m} 分`;
+}
 function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function isLeapYear(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
 function maxPeriodOfYear(y) { return isLeapYear(y) ? 366 : 365; }
@@ -1232,7 +1315,8 @@ let manualRecords = [];
 let lockHistory = [];
 let lockedPlan = null;
 let storageProblem = '';
-let activeTier = 10;
+let activeTier = 10;   // 会被本机记忆的档位覆盖
+const PREFS_KEY = 'mark6_blind_tier_v1';
 let selectedYear = 'ALL';
 let historySearchQuery = '';
 let historyOnlyHit = false;
@@ -1302,6 +1386,19 @@ function saveManual() {
     alert('存储空间不足，请先导出备份');
     return false;
   }
+}
+
+function saveTierPref(tier) {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ tier, savedAt: new Date().toISOString() })); } catch { /* 忽略：不记也能用 */ }
+}
+
+function loadTierPref() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return null;
+    const tier = Number(JSON.parse(raw)?.tier);
+    return TIER_SIZES.includes(tier) ? tier : null;
+  } catch { return null; }
 }
 
 function loadManual() {
@@ -1402,6 +1499,20 @@ function selectBalancedSeven(scoreMap, opts) {
   const tCnt = new Uint8Array(10);
   let oddCnt = 0, bigCnt = 0;
 
+  /* 一个候选号是否满足全部硬约束（三区/波色上下界、7 尾不重、奇偶与大小区间）。
+     注意：逐个挑选时，越到后面越可能「怎么选都越界」，旧实现会退回宽松模式，
+     于是 7 码里常出现 5 个奇数或 0 个尾数重复被打破却没提示。这一步是单点判据。 */
+  const fitsAll = (n) => {
+    const z = zoneOf(n), c = WAVE_MAP[n], tl = n % 10;
+    if (zCnt[z] + 1 > maxZ) return false;
+    if (cCnt[c] + 1 > maxC) return false;
+    if (tCnt[tl] + 1 > maxTail) return false;
+    const o = oddCnt + (n & 1), b = bigCnt + (n >= 25 ? 1 : 0);
+    if (o < oddLo || o > oddHi) return false;
+    if (b < bigLo || b > bigHi) return false;
+    return true;
+  };
+
   while (chosen.length < size) {
     let bestNum = 0, bestVal = -Infinity;
     const remAfter = size - (chosen.length + 1);
@@ -1443,7 +1554,8 @@ function selectBalancedSeven(scoreMap, opts) {
 
         if (tCnt[tl] > 0) val -= 0.12 * tCnt[tl];
 
-        val -= 0.05 * Math.abs(oddCnt + isOdd - 3.5) - 0.05 * Math.abs(bigCnt + isBig - 3.5);
+        // 奇偶、大小都向 3.5 靠拢：两项都是「偏离越小得分越高」
+        val -= 0.05 * Math.abs(oddCnt + isOdd - 3.5) + 0.05 * Math.abs(bigCnt + isBig - 3.5);
         if (val > bestVal) {
           bestVal = val;
           bestNum = n;
@@ -1460,6 +1572,56 @@ function selectBalancedSeven(scoreMap, opts) {
     if (bestNum & 1) oddCnt++;
     if (bestNum >= 25) bigCnt++;
   }
+  /* 贪心兜底修正：宽松补位可能让奇偶/大小落在区间外，或让三区/波色最低配额没满足。
+     这里做确定性的「相等交换」修复（只用组外候选号、只接受让约束更接近满足的交换），
+     保证同一期永远得到同一组号，同时让声明的形态约束真的成立。 */
+  const constraintScore = (list) => {
+    const zs = { 1: 0, 2: 0, 3: 0 }, cs = { red: 0, blue: 0, green: 0 }, ts = new Uint8Array(10);
+    let o = 0, b = 0;
+    for (const n of list) {
+      zs[zoneOf(n)]++; cs[WAVE_MAP[n]]++; ts[n % 10]++; if (n & 1) o++; if (n >= 25) b++;
+    }
+    let score = 0;
+    for (let z = 1; z <= 3; z++) {
+      score += Math.min(zs[z], minZ);
+      score -= Math.max(0, zs[z] - maxZ) * 2;
+    }
+    for (const c of ['red', 'blue', 'green']) {
+      score += Math.min(cs[c], minC);
+      score -= Math.max(0, cs[c] - maxC) * 2;
+    }
+    score -= ts.reduce((acc, cnt) => acc + Math.max(0, cnt - maxTail) * 2, 0);
+    score -= Math.max(0, o - oddHi) * 2 + Math.max(0, oddLo - o) * 2;
+    score -= Math.max(0, b - bigHi) * 2 + Math.max(0, bigLo - b) * 2;
+    return score;
+  };
+
+  for (let pass = 0; pass < size * 3; pass++) {
+    const base = constraintScore(chosen);
+    if (base >= (3 + 3 + 7)) break; // 已达理论上限：三区/波色全覆盖 + 无重尾
+    let improved = false;
+    for (const inside of chosen.slice()) {
+      for (const outside of candidates) {
+        if (chosenMask[outside]) continue;
+        const trial = chosen.filter(n => n !== inside).concat(outside);
+        if (constraintScore(trial) > base) {
+          chosen[chosen.indexOf(inside)] = outside;
+          chosenMask[inside] = 0;
+          chosenMask[outside] = 1;
+          zCnt[zoneOf(outside)]++; zCnt[zoneOf(inside)]--;
+          cCnt[WAVE_MAP[outside]]++; cCnt[WAVE_MAP[inside]]--;
+          tCnt[outside % 10]++; tCnt[inside % 10]--;
+          oddCnt += (outside & 1) - (inside & 1);
+          bigCnt += (outside >= 25 ? 1 : 0) - (inside >= 25 ? 1 : 0);
+          improved = true;
+          break;
+        }
+      }
+      if (improved) break;
+    }
+    if (!improved) break;
+  }
+
   return chosen.sort((a, b) => a - b);
 }
 
@@ -1695,6 +1857,24 @@ function selectPoolSeven(pool, scoreMap) {
       chosen.push(n); used.add(n); zCnt[z]++; cCnt[c]++; tCnt[tl]++;
     }
   }
+
+  /* 盲区池本身是「工具2 没覆盖的号」，小号天然更多，纯按分数取 7 码会一边倒压在小号上
+     （回放里大号≤2 个的单组占 13%）。这里只做一步小幅度的大小均衡：
+     大号少于 3 个时，用池里分数最高的小号换掉分数最低的组内小号。 */
+  const isBigNum = (n) => n >= 25;
+  const bigOf = (list) => list.filter(isBigNum).length;
+  let guard = 0;
+  while (bigOf(chosen) < 3 && guard++ < 3) {
+    const outSmall = [...chosen].filter((n) => !isBigNum(n))
+      .sort((a, b) => scoreMap[a] - scoreMap[b] || b - a)[0];
+    const inBig = sorted.find((n) => isBigNum(n) && !used.has(n));
+    if (outSmall == null || inBig == null) break;
+    chosen[chosen.indexOf(outSmall)] = inBig;
+    used.delete(outSmall); used.add(inBig);
+    zCnt[zoneOf(outSmall)]--; cCnt[WAVE_MAP[outSmall]]--; tCnt[outSmall % 10]--;
+    zCnt[zoneOf(inBig)]++; cCnt[WAVE_MAP[inBig]]++; tCnt[inBig % 10]++;
+  }
+
   return chosen.sort((a, b) => a - b);
 }
 
@@ -1705,7 +1885,11 @@ function scoreStrategyPicks(groups, scoreMaps) {
   for (const [key, nominees] of Object.entries(groups)) {
     const raw = scoreMaps[key];
     for (const n of nominees) {
-      const rankBonus = nominees.filter(other => raw[other] <= raw[n]).length;
+      // 名字取自权重乘加，理论上同分的两个号可能差 1e-16；加容差让「并列」真的并列。
+      // 并列按竞赛名次：得分比我高的有 k 个 → 我排第 k+1 → 加 7-k 分（并列第一都加 7，下一名加 5）。
+      // 名字取自权重乘加，理论上同分的两个号可能差 1e-16，所以比较时留 1e-9 容差。
+      const better = nominees.filter(other => raw[other] > raw[n] + 1e-9).length;
+      const rankBonus = Math.max(1, 7 - better);
       points.set(n, (points.get(n) || 0) + 20 + rankBonus);
     }
   }
@@ -1892,6 +2076,11 @@ const STRATEGY_DEFS = [
   { group: 'cycle', hitKey: 'hitCycle', code: '#3', name: '肖热', color: '#10a878', fullName: '肖热透支' }
 ];
 const RECENT_HIT_WINDOW = 30;
+const THERMO_WINDOW = 200;
+/* 本地记录的开奖时刻：每晚 21:30（北京时间）。仅用于「大概什么时候截止」的提醒，
+   真实截止时间以投注渠道为准，所以页面不假装精确。 */
+const DRAW_HOUR = 21;
+const DRAW_MINUTE = 30;
 
 let activeUsable = [];
 let currentPlanData = null;
@@ -1936,11 +2125,29 @@ function renderTierTabs() {
     const note = isUnion ? `${currentPlanData.union.length}码` : `高分前${tier}`;
     return `<button type="button" class="tier-btn${tier === activeTier ? ' active' : ''}" data-tier="${tier}" role="tab" aria-selected="${tier === activeTier}">${title} <small>${note}</small></button>`;
   }).join('');
+  // 键盘左右方向键切换档位（role=tab 的标准交互）
+  wrap.onkeydown = (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const idx = TIER_SIZES.indexOf(activeTier);
+    const nextIdx = e.key === 'ArrowRight' ? Math.min(TIER_SIZES.length - 1, idx + 1) : Math.max(0, idx - 1);
+    if (nextIdx === idx) return;
+    e.preventDefault();
+    activeTier = TIER_SIZES[nextIdx];
+    saveTierPref(activeTier);
+    renderTierTabs();
+    renderPicks();
+    renderSignal();
+    renderLockArea(expectedNextLabel());
+    renderHistoryHead();
+    renderRecentHistory();
+    wrap.querySelector(`button[data-tier="${activeTier}"]`)?.focus();
+  };
   wrap.querySelectorAll('button[data-tier]').forEach(btn => {
     btn.addEventListener('click', () => {
       const size = Number(btn.getAttribute('data-tier'));
       if (!TIER_SIZES.includes(size) || size === activeTier) return;
       activeTier = size;
+      saveTierPref(size);
       renderTierTabs();
       renderPicks();
       renderSignal();
@@ -1968,7 +2175,10 @@ function renderPicks() {
     return;
   }
   const picks = picksOfRow(currentPlanData, activeTier);
-  const copyText = picks.slice().sort((a, b) => a - b).map(pad2).join('，');
+  const label = expectedNextLabel();
+  const copyNums = picks.slice().sort((a, b) => a - b).map(pad2).join('，');
+  // 复制的是一份「能带出去用」的记录：期号 + 码数 + 号码。
+  const copyText = `${label}｜${picks.length}码｜${copyNums}`;
   host.innerHTML = `
     <div class="pick-heading">
       <b>当前${tierLabel(activeTier, picks.length)}</b>
@@ -1976,11 +2186,98 @@ function renderPicks() {
     </div>
     <div class="pick-grid">${picks.map(n => pickChipHtml(n, currentPlanData.groups)).join('')}</div>
     <div class="copy-preview">
-      <span>复制格式（号码升序，中文逗号分隔）</span>
-      <code>${copyText}</code>
+      <span>复制内容（期号 + 码数 + 号码，方便粘贴后核对）</span>
+      <code>${escapeHtml(copyText)}</code>
     </div>`;
   copyBtn.setAttribute('data-copy', copyText);
   copyBtn.disabled = picks.length === 0;
+  renderCostLine(picks, currentPlanData);
+}
+
+/** 把「这组号要花多少钱 / 命中概率是多少」摆在用户眼前，而不是藏在文档里 */
+function renderCostLine(picks, plan) {
+  const host = document.getElementById('costLine');
+  if (!host) return;
+  const count = picks.length;
+  const p = count / 49;
+  const odds = 48;
+  const cost = count * 10;
+  const payout = odds * 10;
+  const ev = p * payout - cost;                 // 每期期望净收益
+  const breakEvenOdds = 49;                     // 公平赔率
+  host.innerHTML = `
+    <div class="cl-row">
+      <span class="cl-chip">覆盖 <b>${count}</b> / 49 码</span>
+      <span class="cl-chip">理论命中率 <b>${(p * 100).toFixed(1)}%</b></span>
+      <span class="cl-chip">按 10 元/码：每期 <b>${cost}</b> 元</span>
+      <span class="cl-chip">命中一注返 <b>${payout}</b> 元（${odds} 倍）</span>
+      <span class="cl-warn">返奖率 ${(odds / 49 * 100).toFixed(2)}%，每期期望 <b>${ev.toFixed(2)}</b> 元</span>
+    </div>
+    <span class="cl-note">命中率就是覆盖率：49 个号等概率，选 K 个号 = 命中概率 K/49，历史走势改变不了这个比例。
+    期望值按固定 ${odds} 倍赔率计算；实际赔率低于 ${breakEvenOdds} 倍时，长期跑必亏。只是娱乐请按可承受金额下注。</span>`;
+}
+
+/** 首个「主推」区域的概览行：数据新鲜度提醒 + 本期成本 + 理论命中率 */
+function renderHeroMeta(picks) {
+  const host = document.getElementById('heroMeta');
+  if (!host) return;
+  const nextLabel = expectedNextLabel();
+  const latest = allRecords().at(-1);
+  const pieces = [];
+  const p = parseLabel(nextLabel);
+  const deadline = p ? drawDeadline(periodToDate(p.year, p.periodNum)) : null;
+  const now = Date.now();
+
+  // 1) 数据是否已经过期：底库最新一期 + 1 天都早于今天，说明有开奖还没同步进来
+  if (latest) {
+    const latestTarget = drawDeadline(latest.date);
+    const daysBehind = latestTarget ? Math.floor((now - latestTarget) / 86400000) : 0;
+    const label = `上期 ${latest.label}（${latest.date}）`;
+    if (daysBehind >= 1) {
+      pieces.push(`<span class="hm-warn">底库最新只到 ${escapeHtml(label)}，已有 <b>${daysBehind}</b> 天没有新开奖入账，请点右上角「一键同步」。</span>`);
+      if (latest.special != null) pieces.push(`上期特码 <strong>${pad2(latest.special)}</strong>`);
+    } else {
+      pieces.push(`${escapeHtml(label)} 特码 <strong>${latest.special != null ? pad2(latest.special) : '—'}</strong>`);
+    }
+  }
+
+  // 2) 本期成本和理论命中率
+  if (picks && picks.length) {
+    const cost = picks.length * 10;
+    pieces.push(`本期覆盖 <strong>${picks.length}/49</strong> 码 · 命中率 <strong>${(picks.length / 49 * 100).toFixed(1)}%</strong> · 按 10 元/码约 <strong>${cost}</strong> 元`);
+  }
+
+  // 3) 开奖时间提醒（只做大概提醒，不假装精确）
+  if (deadline) {
+    const diff = deadline - now;
+    if (diff > 0) {
+      pieces.push(`约 <strong>${humanDuration(diff)}</strong> 后开奖（北京时间 ${pad2(DRAW_HOUR)}:${pad2(DRAW_MINUTE)}，以渠道截止为准）`);
+    } else {
+      pieces.push(`<span class="hm-warn">本期开奖时间（北京时间 ${pad2(DRAW_HOUR)}:${pad2(DRAW_MINUTE)}）已过，若已开奖请先同步。</span>`);
+    }
+  }
+  host.innerHTML = pieces.join('<span class="hm-sep">·</span>');
+}
+
+/** 顶部 hero 标题的期号与倒计时 */
+function renderHeroHeader(picks) {
+  const nextLabel = expectedNextLabel();
+  const p = parseLabel(nextLabel);
+  const tag = document.getElementById('heroPeriodTag');
+  const chip = document.getElementById('heroCountdown');
+  if (tag) tag.textContent = nextLabel || '--';
+  const deadline = p ? drawDeadline(periodToDate(p.year, p.periodNum)) : null;
+  if (!chip) return;
+  chip.classList.remove('brand', 'warn');
+  if (!deadline) { chip.textContent = '开奖时间待定'; return; }
+  const diff = deadline - Date.now();
+  if (diff > 0) {
+    chip.classList.add('ok');
+    chip.textContent = `约 ${humanDuration(diff)} 后开奖`;
+  } else {
+    chip.classList.add('warn');
+    chip.textContent = `已到开奖时间 · 请同步`;
+  }
 }
 
 function tierLabel(tier, count = currentPlanData?.union.length ?? 0) {
@@ -2013,22 +2310,29 @@ function losingStreak(tier) {
 }
 
 function renderThermometer() {
-  const rows = recentPlanRows(RECENT_HIT_WINDOW);
+  const rows = recentPlanRows(THERMO_WINDOW);
   const host = document.getElementById('thermometerList');
+  const baseline = document.getElementById('thermoBaseline');
   if (!rows.length) {
-    host.innerHTML = '<div class="empty">数据不足，暂无温度计</div>';
+    host.innerHTML = '<div class="empty">数据不足，暂无统计</div>';
+    if (baseline) baseline.textContent = '';
     return;
   }
   document.getElementById('thermoRangeTag').textContent =
     `最近 ${rows.length} 期（${rows[0].label} ~ ${rows.at(-1).label}）· 不影响算法`;
 
+  const base = 7 / 49;
+  const basePct = base * 100;
   host.innerHTML = STRATEGY_DEFS.map(def => {
     const hits = rows.filter(r => r[def.hitKey]).length;
     const rate = rows.length ? hits / rows.length : 0;
     const pct = (rate * 100).toFixed(1);
-    const level = rate >= 0.30 ? { cls: 'warm', text: '偏热' }
-      : rate >= 0.20 ? { cls: 'normal', text: '正常' }
-        : { cls: 'cool', text: '偏冷' };
+    const [lo, hi] = wilson95(hits, rows.length);
+    const consistent = lo <= basePct / 100 && hi >= basePct / 100;
+    const level = consistent
+      ? { cls: 'cool', text: '与随机不可区分' }
+      : rate > basePct / 100 ? { cls: 'warm', text: '高于随机' } : { cls: 'cool', text: '低于随机' };
+    const left = Math.max(0, lo * 100), width = Math.max(1.2, (hi - lo) * 100);
     return `<div class="thermo-row">
       <div class="thermo-top">
         <span class="thermo-name"><span style="color:${def.color}">●</span>${def.code} ${def.name}<span class="thermo-desc">· ${def.fullName} 7 码</span></span>
@@ -2038,11 +2342,26 @@ function renderThermometer() {
           <span class="temp-tag ${level.cls}">${level.text}</span>
         </span>
       </div>
-      <div class="thermo-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(rate * 100)}">
-        <div class="thermo-fill" style="width:${Math.max(2, rate * 100).toFixed(1)}%;background:${def.color}"></div>
+      <div class="ci-bar" role="img" aria-label="${def.code} ${def.name} 命中率 ${pct}%，95% 区间 ${(lo * 100).toFixed(1)}% ~ ${(hi * 100).toFixed(1)}%，随机基线 ${basePct.toFixed(1)}%">
+        <div class="ci-range" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background:${def.color}55"></div>
+        <div class="ci-point" style="left:${(rate * 100).toFixed(1)}%;background:${def.color}"></div>
+        <div class="ci-base" style="left:${basePct.toFixed(1)}%" title="随机基线 ${basePct.toFixed(1)}%"></div>
       </div>
+      <div class="ci-legend">95% 置信区间 ${(lo * 100).toFixed(1)}% ~ ${(hi * 100).toFixed(1)}% · 红线为随机基线 ${basePct.toFixed(1)}%</div>
     </div>`;
   }).join('');
+
+  if (baseline) {
+    const anyReal = STRATEGY_DEFS.some(def => {
+      const hits = rows.filter(r => r[def.hitKey]).length;
+      const [lo, hi] = wilson95(hits, rows.length);
+      return !(lo <= base && hi >= base);
+    });
+    baseline.innerHTML = `随机基线：单组 7 码 = 7/49 ≈ ${basePct.toFixed(1)}%。` +
+      (anyReal
+        ? `当前样本里已有策略的区间完全落在基线之外，但样本仍有限，别急着据此重仓。`
+        : `三组的 95% 区间都跨过了基线 —— 也就是说，现在的排名和抛硬币分不出高下。`);
+  }
 }
 
 function renderSignal() {
@@ -2064,22 +2383,29 @@ function renderSignal() {
     return;
   }
 
-  const rankedDefs = STRATEGY_DEFS.map(def => ({
-    ...def,
-    hits: rows.filter(r => r[def.hitKey]).length
-  })).sort((a, b) => b.hits - a.hits);
+  // 用 200 期样本判定「谁更好」，避免 30 期噪声被当成结论
+  const longRows = recentPlanRows(THERMO_WINDOW);
+  const base = 7 / 49;
+  const rankedDefs = STRATEGY_DEFS.map(def => {
+    const hits = longRows.filter(r => r[def.hitKey]).length;
+    const [lo, hi] = wilson95(hits, longRows.length || 1);
+    return { ...def, hits, n: longRows.length, lo, hi, distinct: !(lo <= base && hi >= base) };
+  }).sort((a, b) => b.hits / b.n - a.hits / a.n);
   const best = rankedDefs[0];
-  const rate = (best.hits / rows.length * 100).toFixed(0);
+  const bestPct = (best.hits / best.n * 100).toFixed(1);
 
   if (streak >= 5) {
     banner.classList.add('orange');
-    textEl.textContent = `系统参考信号：主推已连续 ${streak} 期未中，建议谨慎参考；近30期「${best.code} ${best.name}」相对占优（${best.hits}/${rows.length}，${rate}%）。`;
-  } else if (best.hits / rows.length >= 0.30) {
+    textEl.textContent = `主推已连续 ${streak} 期未中：连错本身就是随机的正常波动，不代表「该出了」，请按预算下注。`;
+  } else if (best.distinct && best.hits / best.n > base) {
     banner.classList.add('green');
-    textEl.textContent = `系统参考信号：近30期「${best.code} ${best.name}」表现较好（${best.hits}/${rows.length}，命中率 ${rate}%），可优先参考。`;
+    textEl.textContent = `近${best.n}期「${best.code} ${best.name}」${bestPct}%，区间已高于随机基线 ${(base * 100).toFixed(1)}%；但样本有限，不代表下一期更准。`;
+  } else if (best.distinct && best.hits / best.n < base) {
+    banner.classList.add('orange');
+    textEl.textContent = `近${best.n}期最好的「${best.code} ${best.name}」也只有 ${bestPct}%，仍在随机基线附近——三个策略目前都没有可测量的优势。`;
   } else {
     banner.classList.add('blue');
-    textEl.textContent = `系统参考信号：近期整体偏冷，建议小额参考；近30期「${best.code} ${best.name}」相对最好（${best.hits}/${rows.length}，${rate}%）。`;
+    textEl.textContent = `近${best.n}期最好的「${best.code} ${best.name}」为 ${bestPct}%，95% 区间跨过随机基线 ${(base * 100).toFixed(1)}%，与随机不可区分。`;
   }
 }
 
@@ -2096,12 +2422,16 @@ function renderStrategyGroups(groups, label) {
 function renderMainPick() {
   const nextLbl = expectedNextLabel();
   document.getElementById('nextTargetHead').textContent = nextLbl;
-  document.getElementById('recPeriodTag').textContent = nextLbl;
+  const periodTag = document.getElementById('recPeriodTag');
+  if (periodTag) periodTag.textContent = nextLbl;
   const p = parseLabel(nextLbl);
   currentPlanData = p && activeUsable.length
     ? computeBlindPlan(activeUsable, activeUsable.length, p.year, p.periodNum, periodToDate(p.year, p.periodNum)) : null;
   if (currentPlanData) renderTierTabs();
   renderPicks();
+  const currentPicks = currentPlanData ? picksOfRow(currentPlanData, activeTier) : [];
+  renderHeroHeader(currentPicks);
+  renderHeroMeta(currentPicks);
   renderStrategyGroups(currentPlanData?.groups, nextLbl);
 }
 
@@ -2141,6 +2471,33 @@ function renderLockArea(targetLabel) {
   }
 
   countEl.textContent = `${lockHistory.length} 条`;
+
+  // 累计核对：锁过多少期、命中多少期、和「随机覆盖」比是否可分
+  const fin = document.getElementById('finSummary');
+  if (fin) {
+    const settled = lockHistory.filter(x => x.special != null);
+    if (settled.length) {
+      let hits = 0, exp = 0;
+      for (const log of settled) {
+        const p = (log.picks && log.picks.length ? log.picks : log.opt) || [];
+        if (log.hitPicks) hits++;
+        exp += p.length / 49;
+      }
+      const [lo, hi] = wilson95(hits, settled.length);
+      const base = exp / settled.length;
+      const indistinguishable = lo <= base && hi >= base;
+      fin.hidden = false;
+      fin.innerHTML = `已核对 <b>${settled.length}</b> 期锁定记录：命中 <b>${hits}</b> 期（${(hits / settled.length * 100).toFixed(1)}%），
+        按当时覆盖码数应得 <b>${(base * 100).toFixed(1)}%</b>；
+        95% 区间 <b>${(lo * 100).toFixed(1)}% ~ ${(hi * 100).toFixed(1)}%</b>。
+        ${indistinguishable
+          ? '区间跨过理论值，和「随便选同样多的号」没有统计差别。'
+          : (hits / settled.length > base ? '区间高于理论值，但样本还小，继续记录再下结论。' : '区间低于理论值，更可能是随机波动。')}`;
+    } else {
+      fin.hidden = true;
+      fin.innerHTML = '';
+    }
+  }
   const logs = lockHistory.slice().reverse().slice(0, 100);
   document.getElementById('lockHistory').innerHTML = logs.length ? logs.map(log => {
     const when = new Date(log.archivedAt || log.createdAt).toLocaleString('zh-CN');
@@ -2199,10 +2556,14 @@ function renderHeatSection(usable) {
     const isHot = f >= hotThreshold;
     const isCold = f === 0;
     const flag = isHot ? '<span class="hc-flag hot">热</span>' : isCold ? '<span class="hc-flag cold">0次</span>' : '';
-    return `<div class="heat-cell ${st.cls}" data-wave="${wave}" data-num="${n}">
+    const lack = snap.deltaByNum[n] || 0;
+    const tip = `${pad2(n)} · ${WAVE_LABEL[wave]} · 近100期${heatScope === 'all7' ? '全奖' : '特码'}开出 ${f} 次` +
+      (lack > 0 ? `（比前100期多 ${lack} 次）` : lack < 0 ? `（比前100期少 ${-lack} 次）` : '（与前100期持平）');
+    // 颜色是唯一编码时色盲用户读不出来，所以在数字下面补一个波色字
+    return `<div class="heat-cell ${st.cls}" data-wave="${wave}" data-num="${n}" title="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
       ${flag}
       <span class="hc-number" data-wave="${wave}" style="background:${WAVE_COLOR[wave]}">${pad2(n)}</span>
-      <small style="color:${st.color}">${f}次</small>
+      <small style="color:${st.color}">${f}次 <em class="hc-wave">${WAVE_LABEL[wave].slice(0, 1)}</em></small>
     </div>`;
   }).join('');
 }
@@ -2252,8 +2613,25 @@ function renderRecentHistory() {
   const hitLabel = activeTier === UNION_TIER ? '三组并集中' : `当前${tierLabel(activeTier)}命中`;
   document.getElementById('recent30Summary').textContent =
     rows.length
-      ? `最近 ${rows.length} 期 · ${hitLabel} ${hit} 期`
+      ? `最近 ${rows.length} 期 · ${hitLabel} ${hit} 期（${(hit / rows.length * 100).toFixed(1)}%）`
       : '暂无数据';
+
+  // 把「理论命中率」一并摆出来，用户才能判断这个数字是好还是坏
+  let expectedSum = 0;
+  for (const r of rows) expectedSum += picksOfRow(r, activeTier).length;
+  const base = rows.length ? expectedSum / rows.length / 49 : 0;
+  const [lo, hi] = wilson95(hit, rows.length || 1);
+  const baselineEl = document.getElementById('recent30Baseline');
+  if (baselineEl) {
+    baselineEl.textContent = rows.length
+      ? `理论 ${(base * 100).toFixed(1)}% · 区间 ${(lo * 100).toFixed(1)}%~${(hi * 100).toFixed(1)}%`
+      : '';
+    baselineEl.className = 'pill';
+    if (rows.length) {
+      const ok = lo <= base && hi >= base;
+      baselineEl.classList.add(ok ? 'subtle' : (hit / rows.length > base ? 'ok' : 'warn'));
+    }
+  }
 }
 
 /* ==================== 历史回放（完整历史逐期明细与年度命中率） ==================== */
@@ -2283,12 +2661,14 @@ function cacheReplayRow(usable, i) {
 }
 
 function ensureRecentReplayCache(usable) {
-  // 最小档包含于其余各档：补到它最近一次命中即可算全各档的连错期数。
+  // 最小档包含于其余各档：补到它最近一次命中即可算全各档的连错期数；
+  // 同时至少补满 THERMO_WINDOW 期，否则「近 200 期」的统计会被静默降级成几十期。
+  const need = Math.max(RECENT_HIT_WINDOW, THERMO_WINDOW);
   let foundHit = false;
   for (let i = usable.length - 1; i >= 0; i--) {
     const row = cacheReplayRow(usable, i);
     if (tierHitOf(row, TIER_SIZES[0])) foundHit = true;
-    if (foundHit && usable.length - i >= RECENT_HIT_WINDOW) break;
+    if (foundHit && usable.length - i >= need) break;
   }
 }
 
@@ -2434,7 +2814,13 @@ function closeHistoryModal() {
 }
 
 function openDataModal() {
-  document.getElementById('periodLabel').value = expectedNextLabel();
+  const exp = expectedNextLabel();
+  const last = allRecords().at(-1);
+  document.getElementById('periodLabel').value = exp;
+  document.getElementById('periodLabel').classList.remove('is-error');
+  setPasteNote('', 'ok');
+  const host = document.getElementById('ballProblems');
+  if (host) { host.hidden = true; host.innerHTML = ''; }
   document.getElementById('dataModal').hidden = false;
   document.body.classList.add('modal-open');
 }
@@ -2513,18 +2899,137 @@ function styleBallInput(input) {
   }
 }
 
-function fillBallsFromText(rawText) {
-  const matches = String(rawText || '').match(/\d{1,2}/g);
-  if (!matches) return false;
-  const nums = matches.map(Number).filter(n => n >= 1 && n <= 49);
-  if (!nums.length) return false;
+/* ------------------------------------------------------------------
+ * 粘贴解析：从一整段「开奖网站原文」里只取出 7 个开奖号码。
+ *
+ * 真实场景里用户几乎是整段复制，例如：
+ *   第321期 2026-11-17 开奖结果：05 12 18 27 33 41 + 特码 07
+ * 旧实现直接 match(/\d{1,2}/g) 取前 7 个数字，会把日期和期号当成开奖号。
+ * 这里先把「期号 / 日期 / 时间 / 序号 / 金额」等片段剔除，再取号码。
+ * ------------------------------------------------------------------ */
+const DRAW_NOISE_PATTERNS = [
+  /\d{4}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}\s*日?/g, // 2026-11-17 / 2026年11月17日
+  /\d{4}\s*[-/]\s*\d{1,3}(?!\d)/g,                          // 2026-321 期号
+  /第\s*\d{1,4}\s*[期期]/g,                                   // 第321期
+  /\b\d{1,2}\s*:\s*\d{2}(?:\s*:\s*\d{2})?\b/g,            // 21:30
+  /(?:期号|期數|期数|开奖日期|開獎日期|日期|投注额|投注額|金额|金額|奖金|獎金)\D{0,3}\d{1,6}/g,
+  /[¥$￥]\s*\d+/g,
+  /(?<![\d.])\d{1,3}(?=\s*(?:期|號|号)(?![0-9]))/g            // 321期
+];
+
+function extractDrawNumbers(rawText) {
+  let text = String(rawText ?? '');
+  for (const re of DRAW_NOISE_PATTERNS) text = text.replace(re, ' ');
+  const tokens = (text.match(/\d{1,2}/g) || []).map(Number);
+  return tokens.filter(n => n >= 1 && n <= 49);
+}
+
+/**
+ * 解析粘贴内容。
+ * @returns {{ nums: number[], ignored: number, issue: string, date: string }}
+ */
+function parseDrawPaste(rawText) {
+  const text = String(rawText ?? '');
+  // 「第321期」这种写法优先；否则才用「2026-321」，且必须不是完整日期（2026-11-17）
+  const dateMatch = text.match(/(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})/);
+  const explicit = text.match(/第\s*(\d{1,4})\s*期/);
+  const ymd = text.match(/(\d{4})\s*[-/]\s*(\d{1,3})(?!\s*[-/]\s*\d)/);
+  const issue = explicit
+    ? `${(dateMatch ? dateMatch[1] : ymd ? ymd[1] : String(new Date().getFullYear()))}-${String(Number(explicit[1])).padStart(3, '0')}`
+    : ymd ? `${ymd[1]}-${String(Number(ymd[2])).padStart(3, '0')}` : '';
+  const allNumbers = (text.match(/\d{1,2}/g) || []).length;
+  const nums = extractDrawNumbers(text);
+  return {
+    nums,
+    ignored: Math.max(0, allNumbers - nums.length),
+    issue,
+    date: dateMatch
+      ? `${dateMatch[1]}-${String(Number(dateMatch[2])).padStart(2, '0')}-${String(Number(dateMatch[3])).padStart(2, '0')}`
+      : ''
+  };
+}
+
+/** 清空 7 个号码格（粘贴前先清空，避免旧值残留混进新一期） */
+function clearBallInputs() {
+  document.querySelectorAll('#ballInputs .ball-input').forEach(inp => {
+    inp.value = '';
+    inp.removeAttribute('style');
+    delete inp.dataset.wave;
+  });
+}
+
+/**
+ * 把号码填进格子。返回 { filled, overflow }。
+ * overflow = 因超过 7 个而未被采纳的号码个数。
+ */
+function fillBallsFromText(rawText, { clear = true } = {}) {
+  const nums = Array.isArray(rawText) ? rawText.map(Number) : extractDrawNumbers(rawText);
+  if (!nums.length) return { filled: 0, overflow: 0 };
   const inputs = [...document.querySelectorAll('#ballInputs .ball-input')];
-  for (let i = 0; i < Math.min(7, nums.length); i++) {
-    inputs[i].value = pad2(nums[i]);
+  if (clear) clearBallInputs();
+  const take = nums.slice(0, 7);
+  for (let i = 0; i < take.length; i++) {
+    inputs[i].value = pad2(take[i]);
     styleBallInput(inputs[i]);
   }
-  inputs[Math.min(6, nums.length)].focus();
-  return true;
+  inputs[Math.min(6, take.length)].focus();
+  return { filled: take.length, overflow: Math.max(0, nums.length - 7) };
+}
+
+/** 校验 7 个号码格，返回逐格错误信息（空数组 = 通过） */
+function validateBallInputs() {
+  const inputs = [...document.querySelectorAll('#ballInputs .ball-input')];
+  const values = inputs.map(x => x.value.trim());
+  const problems = [];
+  const seen = new Map();
+  values.forEach((v, i) => {
+    const name = i === 6 ? '特码' : `正${i + 1}`;
+    if (!v) { problems.push({ index: i, text: `${name} 还没填` }); return; }
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > 49) {
+      problems.push({ index: i, text: `${name}「${v}」不是 01~49` });
+      return;
+    }
+    if (seen.has(n)) {
+      const first = seen.get(n);
+      problems.push({ index: i, text: `${name} 与${first === 6 ? '特码' : `正${first + 1}`}重复（${pad2(n)}）` });
+      return;
+    }
+    seen.set(n, i);
+  });
+  return problems;
+}
+
+/** 粘贴结果提示（绿=正常，橙=需要人工确认） */
+function setPasteNote(text, tone = 'ok') {
+  const el = document.getElementById('pasteNote');
+  if (!el) return;
+  if (!text) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.className = `paste-note ${tone}`;
+  el.textContent = text;
+}
+
+/** 在号码格下方显示逐格错误，并给对应格子加抖动 */
+function showBallProblems(problems) {
+  const host = document.getElementById('ballProblems');
+  const inputs = [...document.querySelectorAll('#ballInputs .ball-input')];
+  inputs.forEach(x => x.classList.remove('shake', 'is-error'));
+  if (!problems.length) {
+    if (host) { host.hidden = true; host.innerHTML = ''; }
+    return;
+  }
+  problems.forEach(pb => {
+    const x = inputs[pb.index];
+    if (!x) return;
+    x.classList.add('is-error', 'shake');
+    setTimeout(() => x.classList.remove('shake'), 330);
+  });
+  const unique = [...new Set(problems.map(pb => pb.text))];
+  if (host) {
+    host.hidden = false;
+    host.innerHTML = `<b>无法保存，请先修正：</b>${unique.map(t => `<span>${escapeHtml(t)}</span>`).join('')}`;
+  }
 }
 
 function setupBallInputs() {
@@ -2592,11 +3097,39 @@ function setupBallInputs() {
   }
 
   const pasteBox = document.getElementById('quickPaste');
-  pasteBox.addEventListener('input', () => {
-    if ((pasteBox.value.match(/\d+/g) || []).length >= 7) {
-      fillBallsFromText(pasteBox.value);
-      pasteBox.value = '';
+  const consumePaste = () => {
+    const raw = pasteBox.value;
+    if (!raw.trim()) return;
+    const parsed = parseDrawPaste(raw);
+    if (parsed.nums.length < 7) {
+      setPasteNote(`只识别到 ${parsed.nums.length} 个 01~49 的号码，需要 7 个；请直接粘贴整段开奖结果。`, 'warn');
+      return;
     }
+    const { filled, overflow } = fillBallsFromText(parsed.nums, { clear: true });
+    pasteBox.value = '';
+    showBallProblems(validateBallInputs());
+    const parts = [`已识别 ${filled} 个号码`];
+    if (parsed.issue) parts.push(`期号 ${parsed.issue}`);
+    if (parsed.date) parts.push(`日期 ${parsed.date}`);
+    if (overflow) parts.push(`多出的 ${overflow} 个号码已忽略`);
+    if (parsed.issue && parsed.issue !== expectedNextLabel()) {
+      parts.push(`注意：本期应补录 ${expectedNextLabel()}`);
+    }
+    setPasteNote(parts.join(' · '), overflow || (parsed.issue && parsed.issue !== expectedNextLabel()) ? 'warn' : 'ok');
+  };
+  pasteBox.addEventListener('input', () => {
+    if ((pasteBox.value.match(/\d{1,2}/g) || []).length >= 7) consumePaste();
+  });
+  pasteBox.addEventListener('paste', () => setTimeout(consumePaste, 0));
+  pasteBox.addEventListener('blur', () => { if (pasteBox.value.trim()) consumePaste(); });
+
+  // 键盘直接输入时实时清掉该格的错误态
+  document.querySelectorAll('#ballInputs .ball-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      inp.classList.remove('is-error');
+      const rest = [...document.querySelectorAll('#ballInputs .ball-input.is-error')];
+      if (!rest.length) showBallProblems([]);
+    });
   });
 }
 
@@ -2645,6 +3178,8 @@ function bindHistoryDetail(tbodyId) {
 
 function init() {
   document.getElementById('footerVersion').textContent = APP_BUILD;
+  const savedTier = loadTierPref();
+  if (savedTier != null) activeTier = savedTier;
   const persisted = loadManual();
   manualRecords = persisted.records;
   lockedPlan = persisted.locked;
@@ -2686,21 +3221,39 @@ function init() {
 
   document.getElementById('submitDraw').addEventListener('click', () => {
     const inputs = [...document.querySelectorAll('#ballInputs .ball-input')];
-    const nums = inputs.map(x => Number(x.value));
-    if (!validSevenNums(nums)) {
-      inputs.forEach(x => {
-        const n = Number(x.value);
-        if (!Number.isInteger(n) || n < 1 || n > 49 || nums.filter(v => v === n).length > 1) {
-          x.classList.add('shake');
-          setTimeout(() => x.classList.remove('shake'), 320);
-        }
-      });
+    const problems = validateBallInputs();
+    if (problems.length) {
+      showBallProblems(problems);
+      setPasteNote('', 'ok');
       return;
     }
-    const parsed = parseLabel(document.getElementById('periodLabel').value);
+    showBallProblems([]);
+    const nums = inputs.map(x => Number(x.value));
+    const periodInput = document.getElementById('periodLabel');
     const exp = expectedNextLabel();
-    if (!parsed || parsed.label !== exp) {
-      alert(`请按顺序录入下一期：${exp}`);
+    let parsed = parseLabel(periodInput.value);
+    // 允许只填期号数字（320 / 026-320 之类），自动补全为 2026-320
+    if (!parsed) {
+      const digits = String(periodInput.value || '').replace(/[^0-9]/g, '');
+      if (digits && digits.length <= 3) {
+        parsed = parseLabel(`${exp.slice(0, 4)}-${String(Number(digits)).padStart(3, '0')}`);
+      } else if (digits.length >= 5) {
+        parsed = parseLabel(`${digits.slice(0, 4)}-${String(Number(digits.slice(4))).padStart(3, '0')}`);
+      }
+    }
+    if (!parsed) {
+      setPasteNote(`期号格式应为 ${exp}（或只填 ${exp.slice(5)}）`, 'warn');
+      periodInput.classList.add('is-error');
+      return;
+    }
+    periodInput.classList.remove('is-error');
+    if (parsed.label !== exp) {
+      const last = allRecords().at(-1);
+      setPasteNote(
+        `期号不符：本次要补录的是 ${exp}（上一期 ${last ? last.label : '—'} 的下一天）。` +
+        `第 ${parsed.label} 期还没到或已经存在，请核对后再保存。`,
+        'warn'
+      );
       return;
     }
     const rec = {
@@ -2723,8 +3276,10 @@ function init() {
       lockHistory = lockBackup.history;
       return;
     }
-    inputs.forEach(x => { x.value = ''; x.removeAttribute('style'); });
+    inputs.forEach(x => { x.value = ''; x.removeAttribute('style'); delete x.dataset.wave; });
     inputs[0].focus();
+    setPasteNote('', 'ok');
+    showBallProblems([]);
     justEnteredLabel = rec.label;
     planCache.delete(rec.label);
     refreshAll();
@@ -2755,7 +3310,7 @@ function init() {
 
   document.getElementById('clearData').addEventListener('click', () => {
     if (!manualRecords.length && !lockHistory.length && !lockedPlan) return alert('无手动记录');
-    if (!confirm(`清空全部 ${manualRecords.length} 期手动数据与 ${lockHistory.length} 条锁定记录？`)) return;
+    if (!confirm(`将删除本机新增的 ${manualRecords.length} 期开奖、${lockHistory.length} 条锁定记录以及当前锁定，内置底库不受影响。确定继续？`)) return;
     const backup = { records: manualRecords.slice(), locked: lockedPlan, locks: lockHistory.slice() };
     for (const r of manualRecords) planCache.delete(r.label);
     manualRecords = [];
@@ -2860,10 +3415,80 @@ function init() {
   setTimeout(() => {
     if (cachedRowCount(activeUsable) < activeUsable.length) {
       runFullReplay(() => {}, () => {
+        renderThermometer();
+        renderSignal();
         if (!document.getElementById('historyModal').hidden) renderHistoryModal();
       });
     }
   }, 900);
+
+  // 倒计时每分钟刷新一次（只在空闲时改文本，不重算号码）
+  setInterval(() => {
+    if (document.hidden) return;
+    const picks = currentPlanData ? picksOfRow(currentPlanData, activeTier) : [];
+    renderHeroHeader(picks);
+    renderHeroMeta(picks);
+  }, 60000);
+
+  // 打开页面/切回前台时静默检查一次新开奖：失败不打扰用户，只在同步状态行提示
+  let autoSyncTimer = null;
+  const scheduleAutoSync = () => {
+    clearTimeout(autoSyncTimer);
+    autoSyncTimer = setTimeout(() => { tryAutoSyncNow(); }, 1200);
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) scheduleAutoSync();
+  });
+  scheduleAutoSync();
+
+  // 修复缓存：清 Service Worker 缓存 + 自动同步记录，再刷新
+  document.getElementById('repairCacheBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('repairCacheBtn');
+    btn.disabled = true;
+    btn.textContent = '正在修复…';
+    try {
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' });
+      }
+      if (window.caches?.keys) {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(k => k.startsWith('mark6-nst-')).map(k => caches.delete(k)));
+      }
+      const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : [];
+      await Promise.all(regs.map(reg => reg.update().catch(() => {})));
+      showToast('缓存已清空，正在重新加载…');
+      setTimeout(() => location.reload(), 600);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '修复缓存';
+      showToast('修复失败：' + (e.message || '未知错误'));
+    }
+  });
+}
+
+/** 静默自动同步：只在「有更早期次可补」时写入，其他情况一律不打扰 */
+async function tryAutoSyncNow() {
+  const status = document.getElementById('syncStatus');
+  const latest = allRecords().at(-1);
+  if (!latest) return;
+  const deadline = drawDeadline(latest.date);
+  // 上期开奖时间还没到（差不到 1 小时）就不必联网查
+  if (deadline && Date.now() < deadline.getTime() + 30 * 60 * 1000) {
+    if (status) status.textContent = `已是最新（${latest.label}），下期开奖后会自动检查。`;
+    return;
+  }
+  try {
+    const scoped = window.__noteSyncSyncNow;
+    if (typeof scoped === 'function') {
+      const added = await scoped({ silent: true });
+      if (added > 0 && status) status.textContent = `已自动同步 ${added} 期新开奖。`;
+      else if (status) status.textContent = `自动检查完成，暂无新开奖（最新 ${latest.label}）。`;
+    } else if (status) {
+      status.textContent = `提示：底库最新 ${latest.label}，如已开新一期请点「一键同步」。`;
+    }
+  } catch (e) {
+    if (status) status.textContent = `自动同步失败（${e.message || '网络不可用'}），可手动点「一键同步」。`;
+  }
 }
 
 window.noteSync = {
@@ -2921,6 +3546,6 @@ window.noteSync = {
 
 init();
 </script>
-<script type="module" src="./src/note-sync.js?v=2026.11.18-score4"></script>
+<script type="module" src="./src/note-sync.js?v=2026.11.23-hero1"></script>
 </body>
 </html>
