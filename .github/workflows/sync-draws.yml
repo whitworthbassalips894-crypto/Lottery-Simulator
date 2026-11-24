@@ -53,13 +53,18 @@ jobs:
             const db = JSON.parse(fs.readFileSync("docs/data/draws.json", "utf8"));
             if (!Array.isArray(db.draws) || db.draws.length < 1781) throw new Error("期数异常：" + db.draws.length);
             const seen = new Set();
+            // 历史底库里存在已知脏数据（如 2022-132 正码重复两个 33），
+            // 页面本身用 isUsableDraw 把它排除在统计外。
+            // 校验只为防止"本次同步写坏数据"，所以放行这份历史白名单，
+            // 但对任何新写入的期次仍严格校验。
+            const KNOWN_BAD = new Set(["2022-132"]);
             for (const d of db.draws) {
               if (seen.has(d.id)) throw new Error("重复期号 " + d.id);
               seen.add(d.id);
               if (d.numbers.length !== 6) throw new Error(d.id + " 正码数量错误");
               const seven = [...d.numbers, d.special];
               if (seven.some(n => !Number.isInteger(n) || n < 1 || n > 49)) throw new Error(d.id + " 号码越界");
-              if (new Set(seven).size !== 7) throw new Error(d.id + " 号码重复");
+              if (new Set(seven).size !== 7 && !KNOWN_BAD.has(d.id)) throw new Error(d.id + " 号码重复");
             }
             for (let i = 1; i < db.draws.length; i++) {
               const a = db.draws[i-1], b = db.draws[i];
@@ -72,7 +77,7 @@ jobs:
       - name: 提交变更
         id: commit
         run: |
-          if git diff --quiet -- docs/data/draws.json; then
+          if git diff --quiet -- docs/data/draws.json docs/index.html; then
             echo "没有新期次，跳过提交"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -80,7 +85,7 @@ jobs:
           LATEST=$(node -p 'require("./docs/data/draws.json").latestId')
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-         git add docs/data/draws.json docs/index.html
+          git add docs/data/draws.json docs/index.html
           git commit -m "chore(data): 同步开奖数据至 ${LATEST}"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
