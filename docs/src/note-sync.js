@@ -47,12 +47,30 @@ async function request(url, json = false, timeout = 8000) {
     return payload.draws.map(d => { const row = normalizeDrawRecord(d); if (!row) throw new Error('数据源包含无效开奖'); return row; });
   } finally { clearTimeout(timer); }
 }
+/**
+ * 依次尝试上游直连与公共代理。
+ * 返回 { rows, errors }：不再把所有失败都吞掉，否则用户只看到一句
+ * 「上游暂不可用」，无从判断是网络、代理还是上游改版。
+ */
 async function upstream() {
   const url = DEFAULT_CONFIG.remoteSourceUrl;
-  for (const source of [url, `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}`, `https://r.jina.ai/${url}`]) {
-    try { const rows = await request(source, false, 5000); if (rows.length) return rows; } catch {}
+  const sources = [
+    ['直连', url],
+    ['代理 allorigins', `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`],
+    ['代理 corsproxy', `https://corsproxy.io/?${encodeURIComponent(url)}`],
+    ['代理 r.jina.ai', `https://r.jina.ai/${url}`]
+  ];
+  const errors = [];
+  for (const [name, source] of sources) {
+    try {
+      const rows = await request(source, false, 6000);
+      if (rows.length) return { rows, errors };
+      errors.push(`${name}：解析出 0 期`);
+    } catch (e) {
+      errors.push(`${name}：${e.message}`);
+    }
   }
-  return [];
+  return { rows: [], errors };
 }
 /**
  * 同步实现。
@@ -77,9 +95,13 @@ async function runSync({ silent = false } = {}) {
     if (!rows.length) {
       say('仓库暂无新期次，正在尝试上游开奖源…');
       const remote = await upstream();
-      if (remote.length) rows = planSync(window.noteSync.records(), remote);
-      else if (!sources.length) throw new Error('网络或数据源不可用');
-      else { say('仓库暂无新期次，上游暂不可用，请稍后重试。'); return 0; }
+      if (remote.rows.length) rows = planSync(window.noteSync.records(), remote.rows);
+      else if (!sources.length) {
+        throw new Error(`仓库与上游均不可达（${remote.errors.join('；')}）`);
+      } else {
+        say(`仓库暂无新期次，上游也取不到（${remote.errors.join('；')}）。可先手工补录，或稍后重试。`);
+        return 0;
+      }
     }
     if (!rows.length) { say('同步完成，没有新期次。'); return 0; }
     window.noteSync.apply(rows);

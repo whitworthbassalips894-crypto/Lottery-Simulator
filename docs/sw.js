@@ -8,7 +8,7 @@
  *  4. BUILD_ID 必须与 src/constants.js 的 APP_BUILD、index.html 的 ?v= 参数一致，由单测自动校验。
  */
 
-const BUILD_ID = '2026.11.23-hero1';
+const BUILD_ID = '2026.11.24-sync1';
 const CACHE_PREFIX = 'mark6-nst-';
 const CACHE_NAME = `${CACHE_PREFIX}${BUILD_ID}`;
 
@@ -28,11 +28,12 @@ const SHELL_FILES = [
   './src/periods.js',
   './src/sync.js',
   './src/note-sync.js',
-  './data/draws.js',
+  // 注意：data/draws.js（421KB）是历史遗留文件，页面并未加载，
+  // 不再预缓存，否则每次安装都要多下 400KB 且毫无用处。
   './data/draws.json'
 ];
 
-const DATA_FILES = ['./data/draws.js', './data/draws.json'];
+const DATA_FILES = ['./data/draws.json'];
 
 function normalizePath(pathname) {
   if (pathname.endsWith('/index.html')) return pathname.slice(0, -'index.html'.length);

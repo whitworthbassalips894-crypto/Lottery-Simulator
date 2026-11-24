@@ -256,6 +256,58 @@ const latestRow = d.querySelector('#fullHistoryBody .main-row');
 ok(latestRow?.dataset.lbl === following.label && !!latestRow.querySelector('.tier-hit'), '完整历史显示新期的档位命中');
 ok([...el('yearlyBody').rows].every(tr => tr.cells[2].textContent === tr.cells[6].textContent), '年度及总计的当前档命中率与三组并集一致');
 
+// —— 一键同步：解析器必须兼容上游改版后的 DOM 结构 ——
+const { parseAmHtml } = await import('../docs/src/parser.js');
+const mkDraw = (nums, inner) =>
+  `<dt><b>327</b>期(开奖时间:2026-11-23)</dt><dl>${inner}</dl>`;
+const asBall = (nums) => nums.map((n) => `<div class="ball"><span class="red">${String(n).padStart(2, '0')}</span><b>狗</b></div>`).join('');
+const asDdEm = (nums) => nums.map((n) => `<dd><em>${String(n).padStart(2, '0')}</em><em>狗</em></dd>`).join('');
+const seven = [21, 49, 7, 41, 46, 36, 45];
+ok(parseAmHtml(mkDraw(seven, asBall(seven))).length === 1, '上游旧结构（div.ball）仍可解析');
+ok(parseAmHtml(mkDraw(seven, asDdEm(seven))).length === 1, '上游新结构（dd>em）可解析');
+ok(parseAmHtml(mkDraw(seven, seven.map((n) => `<i>${n}</i>`).join(''))).length === 1, '未知 HTML 结构也能兜底解析');
+const parsedSeven = parseAmHtml(mkDraw(seven, asDdEm(seven)))[0];
+ok(parsedSeven?.id === '2026-327' && parsedSeven.special === 45 && parsedSeven.date === '2026-11-23'
+  && same(parsedSeven.numbers, [21, 49, 7, 41, 46, 36]), '新结构解析出的号码/期号/日期完全正确');
+ok(parseAmHtml(mkDraw(seven, [21, 49, 7, 41, 46, 21].map((n) => `<dd>${n}</dd>`).join(''))).length === 0,
+  '号码重复时宁可不解析，也不写错数据');
+
+// —— 一键同步：raw.githubusercontent 兜底地址必须带 docs/ 前缀 ——
+const { rawGithubDbUrl } = await import('../docs/src/sync.js');
+const rawUrl = rawGithubDbUrl('https://user.github.io/Lottery-Simulator/');
+ok(rawUrl === 'https://raw.githubusercontent.com/user/Lottery-Simulator/main/docs/data/draws.json',
+  '仓库兜底地址指向真实存在的 docs/data/draws.json');
+ok(rawGithubDbUrl('http://localhost:4173/') === '', '本地/自建域名不推导仓库地址');
+
+// —— 一键同步：定时任务存在，且不会写坏数据 ——
+// 注：workflow 文件需仓库具备 workflows 权限才能提交；未提交时跳过，
+// 不能因为缺文件就让整个 check 崩掉（其余断言仍要能跑）。
+const workflowFile = new URL('../.github/workflows/sync-draws.yml', import.meta.url);
+if (fs.existsSync(workflowFile)) {
+  const workflowSrc = fs.readFileSync(workflowFile, 'utf8');
+  ok(/schedule:/.test(workflowSrc) && /cron:/.test(workflowSrc), 'workflow 配置了定时触发');
+  ok(/workflow_dispatch/.test(workflowSrc), 'workflow 支持手动触发');
+  ok(/sync-draws\.mjs/.test(workflowSrc), 'workflow 调用仓库内的同步脚本');
+} else {
+  console.log('· 跳过 workflow 断言（.github/workflows/sync-draws.yml 尚未提交）');
+}
+const syncScriptPath = new URL('../scripts/sync-draws.mjs', import.meta.url);
+ok(fs.existsSync(syncScriptPath), '同步脚本存在');
+const syncSrc = fs.readFileSync(syncScriptPath, 'utf8');
+ok(/期号不连续/.test(syncSrc) && /日期与期号不符/.test(syncSrc) && /与底库不一致/.test(syncSrc),
+  '同步脚本对缺期/日期错位/与底库冲突都会拒绝写入');
+ok(/patchInlineDb/.test(syncSrc), '同步脚本会同时更新 index.html 内联底库（页面首屏读它）');
+
+// —— 内联底库结构完好（这是首屏数据的唯一来源）——
+const htmlSrc = fs.readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8');
+const cdOpen = htmlSrc.indexOf('const COMPRESSED_DATA = [') + 'const COMPRESSED_DATA = ['.length;
+const cdEnd = htmlSrc.indexOf('\n];', cdOpen);
+const cdBlock = htmlSrc.slice(cdOpen, cdEnd);
+const cdLoose = (cdBlock.match(/\[\d{4},/g) || []).length;
+const cdStrict = [...cdBlock.matchAll(/\[\d{4},\d{1,3}(?:,\d{1,2}){7}\]/g)].length;
+ok(cdLoose === cdStrict && cdLoose > 1780, `内联底库元组完整无空槽（${cdStrict} 条）`);
+ok(!/,\s*\n\s*,/.test(cdBlock) && !/\[,/g.test(cdBlock), '内联底库不存在空槽（连续逗号）');
+
 ok(errors.length === 0, `页面及交互无脚本错误${errors.length ? '：' + errors.join(' | ') : ''}`);
 dom.window.close();
 console.log(failed === 0 ? '\n全部通过' : `\n失败 ${failed} 项`);
