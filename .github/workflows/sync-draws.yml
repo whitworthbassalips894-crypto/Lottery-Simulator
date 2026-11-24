@@ -1,0 +1,100 @@
+name: 同步开奖数据
+
+# 每天 22:10（北京时间 21:30 开奖后约 40 分钟）自动抓取上游开奖页，
+# 有新期次就把 docs/data/draws.json 更新并提交，GitHub Pages 随即重建。
+# 这样用户点「一键同步」时，读到的仓库数据就是新的，不再依赖浏览器跨域。
+on:
+  schedule:
+    # UTC 时间；北京时间 = UTC+8 → 14:10 UTC = 22:10 北京时间
+    - cron: '10 14 * * *'
+    # 开奖后每 20 分钟补一次，防止上游延迟出号导致当天漏抓
+    - cron: '30 13,15,16 * * *'
+  workflow_dispatch: # 支持在 Actions 页手动点「Run workflow」
+  push:
+    paths:
+      - 'scripts/sync-draws.mjs'
+      - 'docs/src/parser.js'
+      - '.github/workflows/sync-draws.yml'
+
+# 同一时间只跑一个，避免两次抓取同时写文件造成冲突
+concurrency:
+  group: sync-draws
+  cancel-in-progress: false
+
+permissions:
+  contents: write # 需要提交 draws.json
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 抓取并合并新开奖
+        id: sync
+        run: |
+          set -o pipefail
+          # 不加 --write 先演练一遍，看清将要写入什么（日志留档）
+          node scripts/sync-draws.mjs
+          # 再真正写入
+          node scripts/sync-draws.mjs --write | tee sync.log
+
+      - name: 校验数据未被写坏
+        run: |
+          node -e '
+            const fs = require("fs");
+            const db = JSON.parse(fs.readFileSync("docs/data/draws.json", "utf8"));
+            if (!Array.isArray(db.draws) || db.draws.length < 1781) throw new Error("期数异常：" + db.draws.length);
+            const seen = new Set();
+            for (const d of db.draws) {
+              if (seen.has(d.id)) throw new Error("重复期号 " + d.id);
+              seen.add(d.id);
+              if (d.numbers.length !== 6) throw new Error(d.id + " 正码数量错误");
+              const seven = [...d.numbers, d.special];
+              if (seven.some(n => !Number.isInteger(n) || n < 1 || n > 49)) throw new Error(d.id + " 号码越界");
+              if (new Set(seven).size !== 7) throw new Error(d.id + " 号码重复");
+            }
+            for (let i = 1; i < db.draws.length; i++) {
+              const a = db.draws[i-1], b = db.draws[i];
+              if (a.year * 1000 + a.periodNum <= b.year * 1000 + b.periodNum) throw new Error("排序错误：" + a.id + " / " + b.id);
+            }
+            if (db.draws[0].id !== db.latestId) throw new Error("latestId 与首条不一致");
+            console.log("数据结构校验通过：" + db.draws.length + " 期，最新 " + db.latestId);
+          '
+
+      - name: 提交变更
+        id: commit
+        run: |
+          if git diff --quiet -- docs/data/draws.json; then
+            echo "没有新期次，跳过提交"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LATEST=$(node -p 'require("./docs/data/draws.json").latestId')
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/data/draws.json
+          git commit -m "chore(data): 同步开奖数据至 ${LATEST}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "latest=${LATEST}" >> "$GITHUB_OUTPUT"
+
+      - name: 汇总
+        run: |
+          {
+            echo "### 开奖数据同步"
+            echo ""
+            if [ "${{ steps.commit.outputs.changed }}" = "true" ]; then
+              echo "- ✅ 已提交新数据，最新一期：\`${{ steps.commit.outputs.latest }}\`"
+              echo "- Pages 将在约 1 分钟后重建完成"
+            else
+              echo "- ℹ️ 无新期次，未产生提交"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
