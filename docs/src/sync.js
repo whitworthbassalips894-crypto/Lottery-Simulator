@@ -273,7 +273,7 @@ export function chinaSyncStatus(latest, now = new Date()) {
  * 浏览器可以直接 fetch）。
  *
  * 只在 GitHub Pages 的 project 站点上推导：
- *   https://<user>.github.io/<repo>/... → https://raw.githubusercontent.com/<user>/<repo>/main/data/draws.json
+ *   https://<user>.github.io/<repo>/... → https://raw.githubusercontent.com/<user>/<repo>/main/docs/data/draws.json
  * 本地 / 自建域名无法推导，返回空串（此时只读同目录的静态文件）。
  *
  * @param {string} locationLike 一般是 window.location.href
@@ -289,7 +289,8 @@ export function rawGithubDbUrl(locationLike, branch = 'main') {
     const user = u.hostname.split('.')[0];
     const repo = segments[0];
     if (!user || !repo) return '';
-    return `https://raw.githubusercontent.com/${user}/${repo}/${branch}/data/draws.json`;
+    // 注意：本站发布的是 docs/ 子目录（Pages 源 = main /docs），真实路径必须带 docs/
+    return `https://raw.githubusercontent.com/${user}/${repo}/${branch}/docs/data/draws.json`;
   } catch {
     return '';
   }

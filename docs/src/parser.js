@@ -112,32 +112,50 @@ export function parseAmHtml(html) {
   if (!html || typeof html !== 'string') return [];
   const results = [];
 
-  // 匹配 <dt><b>296</b>期(开奖时间:2026-10-23)</dt> ... <dl>...</dl>
+  // 期号头行：兼容 <dt><b>296</b>期(开奖时间:2026-10-23)</dt>、<dt>296期…</dt>、
+  // 以及被 <a>/<span> 包裹、属性顺序不同的写法。
   const itemRegex =
-    /<dt>\s*<b>\s*(\d+)\s*<\/b>\s*期\s*[（(]\s*开奖时间[:：]\s*(\d{4}-\d{1,2}-\d{1,2})\s*[)）]\s*<\/dt>\s*<dl>([\s\S]*?)<\/dl>/gi;
+    /<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dl\b[^>]*>([\s\S]*?)<\/dl>/gi;
+  const headRegex = /(\d{1,3})\s*期\s*[（(]\s*开奖时间[:：]\s*(\d{4}-\d{1,2}-\d{1,2})\s*[)）]/;
 
   let match;
   while ((match = itemRegex.exec(html)) !== null) {
-    const [, rawPeriod, rawDate, dlContent] = match;
-    const date = normalizeDateString(rawDate);
+    const head = match[1].replace(/<[^>]+>/g, ' ');
+    const headMatch = head.match(headRegex);
+    if (!headMatch) continue;
+    const rawPeriod = headMatch[1];
+    const date = normalizeDateString(headMatch[2]);
+    if (!date) continue;
     const year = Number(date.slice(0, 4));
     const periodNum = Number(rawPeriod);
+    const dlContent = match[2];
 
-    // 解析每个球：<span class="blue">14</span><b>蛇</b>
-    const ballRegex =
-      /<div[^>]*class=["'][^"']*ball[^"']*["'][^>]*>[\s\S]*?<span[^>]*class=["']([^"']+)["'][^>]*>\s*(\d+)\s*<\/span>\s*<b>\s*([^<\s]*)\s*<\/b>/gi;
+    // 球号解析：不依赖具体标签结构（站方改版频繁）。
+    // 优先按「球容器 + 号码 + 生肖」解析出波色/生肖；
+    // 任何结构解析不到时，退回「按文档顺序抓前 7 个 1~49 的独立数字」，
+    // 波色与生肖再由号码+日期推算，保证换版后依然能同步。
     const balls = [];
+    const ballRegex =
+      /<(div|dd|li|span)\b[^>]*(?:class=["'][^"']*(?:ball|num|code|hao)[^"']*["'])?[^>]*>[\s\S]*?<(\d{1,2})<[^>]*>[\s\S]*?(?:<b>|<span[^>]*>)\s*([\u4e00-\u9fa5]{1,2})\s*/gi;
     let bMatch;
-    while ((bMatch = ballRegex.exec(dlContent)) !== null) {
-      const colorClass = bMatch[1].trim().toLowerCase();
-      const color = ['red', 'blue', 'green'].find((c) => colorClass.includes(c)) || null;
+    while ((bMatch = ballRegex.exec(dlContent)) !== null && balls.length < 7) {
       const num = Number(bMatch[2]);
-      const zodiac = bMatch[3].trim();
-      balls.push({ num, color, zodiac });
+      if (num >= 1 && num <= 49) balls.push({ num, color: null, zodiac: bMatch[3].trim() });
+    }
+
+    if (balls.length < 7) {
+      // 兜底：把标签全部抹掉，按顺序取前 7 个 1~49 的整数（球号之间以标签/空白分隔）
+      balls.length = 0;
+      const plain = dlContent.replace(/<[^>]+>/g, ' ');
+      const nums = [...plain.matchAll(/(?:^|[^\d])(\d{1,2})(?!\d)/g)].map((m) => Number(m[1]));
+      for (const n of nums) {
+        if (n >= 1 && n <= 49 && balls.length < 7) balls.push({ num: n, color: null, zodiac: '' });
+      }
     }
 
     if (balls.length >= 7) {
       const sevenBalls = balls.slice(0, 7);
+      if (new Set(sevenBalls.map((b) => b.num)).size !== 7) continue; // 抓错了宁可跳过，也不写错数据
       const record = normalizeDrawRecord({
         year,
         period: padPeriod(periodNum),
