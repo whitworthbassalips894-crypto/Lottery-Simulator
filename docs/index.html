@@ -66,7 +66,6 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
 .pill.brand{background:var(--brand-soft);color:var(--brand);font-family:Consolas,"PingFang SC",monospace}
 .pill.subtle{font-weight:600;color:var(--muted);background:#f8fafc;border:1px solid var(--line)}
 .pill.ok{background:#ecfdf5;color:#047857}
-.pill.warn{background:#fff7ed;color:#9a3412}
 
 /* 按钮体系 */
 .btn{
@@ -156,6 +155,29 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
 }
 .inner-warn{color:#b45309;font-weight:700}
+/* 同步状态的三种结果必须一眼可分：进行中(蓝) / 无新数据(琥珀) / 失败(红) */
+#syncStatus{font-weight:700;line-height:1.6}
+#syncStatus[data-state="pending"]{color:#1d4ed8}
+#syncStatus[data-state="ok"]{color:#047857}
+#syncStatus[data-state="warn"]{color:#b45309}
+#syncStatus[data-state="error"]{color:#dc2626}
+/* 同步中的按钮：转圈 + 变暗，避免用户以为「点了没反应」连点 */
+.btn.sync.is-busy{position:relative;padding-left:34px}
+.btn.sync.is-busy::before{
+  content:"";position:absolute;left:12px;top:50%;margin-top:-7px;
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  animation:sync-spin .7s linear infinite;
+}
+.btn.sync:disabled{opacity:.85;cursor:progress}
+@keyframes sync-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.btn.sync.is-busy::before{animation:none}}
+/* 已锁定的档位与当前档位不一致时的提示 */
+.lock-tier-hint{
+  margin:6px 0 2px;padding:6px 9px;border-radius:7px;
+  background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
+  font-size:11.5px;font-weight:600;line-height:1.5;
+}
 
 /* 2. 近 30 期策略温度计 */
 .thermo-list{display:flex;flex-direction:column;gap:12px}
@@ -193,7 +215,8 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
 .signal-banner.green{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
 .signal-banner.blue{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
 .signal-banner.orange{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
-.signal-left{display:flex;align-items:center;gap:8px;font-weight:700;min-width:0}
+.signal-left{display:flex;align-items:center;gap:8px;font-weight:700;min-width:0;flex-wrap:wrap}
+.signal-detail{display:block;width:100%;font-weight:600;font-size:11.5px;opacity:.85;line-height:1.6;margin-top:2px}
 .signal-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:currentColor}
 .signal-metrics{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .metric-chip{
@@ -226,11 +249,6 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);
   border-radius:13px;padding:15px;margin-bottom:12px;
 }
-.pick-heading{
-  display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;
-  margin-bottom:10px;font-size:12px;color:var(--muted);
-}
-.pick-heading b{font-size:14px;color:var(--ink)}
 .pick-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
@@ -241,8 +259,16 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   background:#fff;border:1px solid var(--line);border-radius:11px;
   padding:9px 5px 7px;text-align:center;
 }
-.pick-sources{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:100%}
-.pick-source{padding:1px 3px;border-radius:4px;background:var(--surface);color:var(--ink-soft);font-size:12px;font-weight:700;line-height:1.4;white-space:nowrap}
+.pick-chip.is-dual{border-color:#fbbf24;background:#fffdf5}
+.pick-tag{
+  font-size:11px;font-weight:700;color:var(--ink-soft);
+  background:#f1f5f9;border-radius:5px;padding:2px 6px;line-height:1.2;
+  max-width:100%;white-space:nowrap;
+}
+.pick-chip.is-dual .pick-tag{background:#fef3c7;color:#b45309}
+.pick-chip.is-hot .pick-tag{background:#fef2f2;color:#b91c1c}
+.pick-chip.is-cold .pick-tag{background:#eff6ff;color:#1d4ed8}
+.pick-chip.is-cycle .pick-tag{background:#ecfdf5;color:#047857}
 
 .copy-preview{
   margin-top:12px;padding:8px 11px;border-radius:8px;
@@ -254,31 +280,48 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   font:700 13px/1.4 Consolas,ui-monospace,monospace;color:var(--ink);
   word-break:break-all;
 }
+/* 成本 / 覆盖 / 期望：主推卡片里最该被看见的一行 */
+.pick-cost{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:11px;
+  padding:8px 11px;border-radius:9px;
+  background:#f8fafc;border:1px solid var(--line);
+  font-size:12px;color:var(--ink-soft);
+}
+.pick-cost b{font-family:Consolas,"PingFang SC",monospace;font-size:12.5px;color:var(--ink)}
+.pick-cost .cost-neg{color:#dc2626}
+.cost-sep{color:var(--faint,#94a3b8)}
+.cost-note{font-size:11px;color:var(--muted);font-weight:600}
+.glossary-btn{
+  border:1px solid var(--line);background:#fff;border-radius:99px;
+  padding:2px 9px;font-size:11px;font-weight:700;color:var(--brand);cursor:pointer;
+}
+.glossary-btn:hover{background:var(--brand-soft,#eff6ff);border-color:#bfdbfe}
+.glossary-list{margin:0;display:grid;gap:10px}
+.glossary-list dt{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:2px}
+.glossary-list dd{margin:0;font-size:12px;line-height:1.7;color:var(--muted)}
+.glossary-foot{
+  padding:9px 11px;border-radius:9px;background:#f8fafc;border:1px dashed var(--line-strong);
+  font-size:11.5px;color:var(--muted);line-height:1.6;
+}
+.pick-mix{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px;
+  font-size:11.5px;color:var(--muted);
+}
+.mix-label{font-weight:700;color:var(--ink-soft)}
+.mix-chip{
+  background:#f1f5f9;border:1px solid var(--line);border-radius:99px;
+  padding:2px 8px;font-weight:700;font-size:11px;color:var(--ink-soft);
+}
+.mix-chip.hot{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+.mix-chip.cold{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.mix-chip.both{background:#fffbeb;border-color:#fcd34d;color:#b45309}
+.mix-chip.cycle{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
+.mix-note{font-size:11px;color:var(--muted)}
 .hero-actions{
   display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-top:12px;
 }
 .hero-actions .btn{min-height:44px;font-size:14px}
 
-.hero-title-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
-.hero-title-row h2{font-size:18px}
-.hero-meta{font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:12px}
-.hero-meta strong{color:var(--ink);font-family:Consolas,monospace}
-.hero-meta .hm-sep{color:var(--line-strong);margin:0 4px}
-.hero-meta .hm-warn{color:#b45309;font-weight:700}
-.hero-meta .hm-link{color:var(--brand);font-weight:700;text-decoration:none;border-bottom:1px dashed currentColor}
-.cost-line{margin-top:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-size:12.5px;line-height:1.8;color:var(--muted)}
-.cost-line b{color:var(--ink);font-family:Consolas,monospace}
-.cost-line .cl-row{display:flex;flex-wrap:wrap;gap:4px 14px}
-.cost-line .cl-chip{font-weight:700;color:var(--ink-soft)}
-.cost-line .cl-warn{color:#b45309;font-weight:700}
-.cost-line .cl-note{display:block;margin-top:5px;padding-top:6px;border-top:1px dashed var(--line-strong);font-size:12px}
-.ci-bar{position:relative;height:7px;border-radius:99px;background:#e2e8f0;margin-top:6px;overflow:hidden}
-.ci-range{position:absolute;top:0;bottom:0;background:rgba(37,99,235,.28);border-radius:99px}
-.ci-point{position:absolute;top:-2px;width:3px;height:11px;border-radius:2px;background:var(--brand);transform:translateX(-1.5px)}
-.ci-base{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ef4444;opacity:.85;transform:translateX(-1px)}
-.ci-legend{font-size:11.5px;color:var(--faint);font-weight:600;margin-top:3px}
-.fin-summary{margin-top:12px;border:1px solid #bfdbfe;background:#f8fbff;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.8;color:var(--ink-soft)}
-.fin-summary b{font-family:Consolas,monospace}
 .lock-current{
   margin-top:11px;border:1px solid #a7f3d0;background:#ecfdf5;
   border-radius:10px;padding:10px 12px;font-size:12px;color:#065f46;
@@ -291,7 +334,7 @@ h2::before{content:"";width:4px;height:16px;border-radius:99px;background:var(--
   color:#fff;font:800 11.5px Consolas,monospace;
 }
 
-/* 主推下方的折叠明细 */
+/* 折叠面板（本地锁定记录 & 查看推导细节） */
 .fold-card{border:1px solid var(--line);border-radius:11px;margin-top:10px;overflow:hidden;background:#fff}
 summary{list-style:none;cursor:pointer;user-select:none}
 summary::-webkit-details-marker{display:none}
@@ -300,7 +343,6 @@ summary::-webkit-details-marker{display:none}
   background:var(--surface);padding:10px 13px;font-size:13px;color:var(--ink-soft);
 }
 .wide-summary:hover{background:#f1f5f9}
-.wide-summary:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 .wide-summary .left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
 .wide-summary b{color:var(--ink);font-weight:800}
 .wide-summary .sub-hint{font-size:11.5px;color:var(--muted)}
@@ -308,10 +350,21 @@ summary::-webkit-details-marker{display:none}
 details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .fold-content{border-top:1px solid var(--line);padding:13px;font-size:12.5px;line-height:1.6}
 
-.strategy-groups{margin:0;display:grid;gap:10px}
-.strategy-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
-.strategy-group dt{font-weight:800;color:var(--ink-soft)}
-.strategy-group dd{display:flex;flex-wrap:wrap;gap:5px;margin:0}
+/* 3.5 三策略号码展开面板 */
+.strategy-fold{margin-top:12px}
+.strategy-fold>.wide-summary{min-height:44px}
+.strategy-list{display:grid;gap:9px}
+.strategy-item{
+  border:1px solid var(--line);border-radius:11px;background:var(--surface);
+  padding:10px 11px;
+}
+.strategy-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.strategy-name{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--ink)}
+.strategy-name .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.strategy-name .strategy-desc{font-weight:600;font-size:11px;color:var(--muted)}
+.strategy-balls{display:flex;flex-wrap:wrap;gap:5px}
+.strategy-copy{font-size:11px;padding:4px 9px;border-radius:8px}
+.strategy-note{margin-top:9px;font-size:11px;color:var(--muted);line-height:1.5}
 
 .lock-list{display:grid;gap:8px}
 .lock-record{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:12px}
@@ -319,6 +372,15 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .lock-record small{color:var(--muted)}
 .lock-record .numbers{margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;align-items:center}
 .empty{padding:4px 0;color:var(--muted);font-size:12px}
+/* 统一空态：标题 + 原因 + 一个可点的下一步，别再让用户对着一排 `--` 猜 */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:18px 12px;text-align:center;
+  border:1px dashed var(--line-strong);border-radius:11px;background:#f8fafc;
+}
+.empty-state-title{font-size:13px;font-weight:800;color:var(--ink-soft)}
+.empty-state-reason{font-size:11.5px;color:var(--muted);line-height:1.6;max-width:36em}
+.empty-state .btn{margin-top:4px}
 .dc-note{color:var(--muted);font-size:12px;font-weight:600}
 
 /* 4. 近 100 期热度分布（7×7 简洁网格） */
@@ -342,6 +404,8 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   margin-bottom:10px;font-size:11.5px;color:var(--muted);
 }
 .legend-items{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.heat-baseline-note{font-size:11.5px;color:var(--muted);line-height:1.6;margin:-4px 0 10px}
+.heat-baseline-note b{color:var(--ink-soft)}
 .lg-chip{display:inline-flex;align-items:center;gap:4px;font-weight:600}
 .lg-dot{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid rgba(15,23,42,.08)}
 
@@ -368,7 +432,6 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   min-width:26px;height:24px;padding:0 5px;border-radius:99px;
   color:#fff;font:800 12px/1 Consolas,monospace;
 }
-.hc-wave{font-style:normal;font-weight:700;opacity:.72;margin-left:1px}
 .heat-cell small{
   display:block;font:700 11px/1.1 "PingFang SC",sans-serif;color:var(--ink-soft);
 }
@@ -410,6 +473,17 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .badge.hit{background:#fee2e2;color:#b91c1c}
 .badge.tier-hit{background:#2563eb;color:#fff}
 .miss-dash{color:#cbd5e1;font:700 13px Consolas,monospace}
+.miss-dot{color:#dbe3ec;font:700 15px/1 Consolas,monospace}
+/* 简表汇总行：把「30 行里 20 个未中」变成一句话 */
+.recent-stats{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  margin:0 0 10px;padding:8px 11px;border-radius:9px;
+  background:#f8fafc;border:1px solid var(--line);
+  font-size:12px;color:var(--ink-soft);font-weight:600;
+}
+.recent-stats b{font-family:Consolas,"PingFang SC",monospace;font-size:13px;color:var(--ink)}
+.rs-sep{color:#cbd5e1}
+.rs-muted{color:var(--muted);font-weight:600}
 .exp-btn{
   border:1px solid var(--line);background:#fff;border-radius:6px;
   padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;font-weight:700;
@@ -468,12 +542,6 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   border:1px solid var(--line);background:#fff;border-radius:99px;
   padding:4px 11px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
 }
-.data-more{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
-.data-more>summary{padding:9px 12px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;list-style:none}
-.data-more>summary::-webkit-details-marker{display:none}
-.data-more>summary::after{content:'⌄';float:right;transition:transform .2s}
-.data-more[open]>summary::after{transform:rotate(180deg)}
-.data-more .actions{padding:0 12px 12px;margin:0}
 .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
 .search-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .search-input{
@@ -494,16 +562,13 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 .balls-plus{font:900 17px Consolas,monospace;color:var(--muted);padding:0 2px 14px}
 .ball-input{width:42px;height:42px;border:2px solid var(--line-strong);border-radius:50%;text-align:center;font:800 15px Consolas,monospace;outline:none;background:#fff;color:var(--ink)}
 .ball-slot.sp .ball-input{border-color:#fca5a5}
-.ball-input.is-error{border-color:var(--hot)!important;box-shadow:0 0 0 3px rgba(229,75,75,.16)}
-.entry-hint{font-size:12.5px;line-height:1.7;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px}
-.entry-hint strong{color:var(--ink)}
-.paste-note{margin:8px 0 0;font-size:12.5px;font-weight:600;line-height:1.6;border-radius:8px;padding:7px 11px}
-.paste-note.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#047857}
-.paste-note.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
-.ball-problems{margin:9px 0 0;font-size:12.5px;line-height:1.7;border-radius:8px;padding:8px 11px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
-.ball-problems b{display:block;margin-bottom:2px}
-.ball-problems span{display:block}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.backup-note{
+  margin-top:9px;padding:8px 11px;border-radius:9px;
+  background:#f8fafc;border:1px dashed var(--line-strong);
+  font-size:11.5px;color:var(--muted);line-height:1.7;
+}
+.backup-note b{color:var(--ink-soft)}
 .entry-flash{margin-top:10px;border-radius:9px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;font-size:12.5px;line-height:1.6;display:none}
 .entry-flash.show{display:block}
 .shake{animation:shake .3s ease;border-color:var(--hot)!important}
@@ -512,6 +577,15 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 /* 手机端响应式适配：通栏按钮、球体与 7×7 网格零溢出 */
 @media(max-width:640px){
   .page{padding:12px 10px 32px;gap:12px}
+  /* 手机上「下期主推」上移到顶部栏之后，号码与复制按钮不用滚动两屏才看得到。
+     所有模块都要显式给 order，否则未设置的模块会排到 0 号前面/后面乱序。 */
+  #topBarSection{order:1}
+  #mainPickSection{order:2}
+  #thermometerSection{order:3}
+  #strategySection{order:4}
+  #heatSection{order:5}
+  #recentHistorySection{order:6}
+  .foot-note{order:7}
   .card{padding:14px 13px;border-radius:14px}
   h1{font-size:18px}
   h2{font-size:15px}
@@ -526,12 +600,28 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   .draw-plus{padding:0 0 14px;font-size:13px}
   .draw-ball-item.is-sp{padding:4px 5px 3px}
   .draw-ball-item.is-sp .ball.xl{width:33px;height:33px;font-size:13.5px}
-  .tier-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-  .tier-btn{padding:8px 2px;font-size:12.5px}
+  .tier-tabs{gap:5px}
+  .tier-btn{padding:8px 4px;font-size:12.5px;white-space:nowrap}
   .tier-btn small{font-size:9px}
-  .pick-grid{grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:6px}
+  /* 5 个档位在窄屏放不下一行：改成可横滑，谁也不换行变形 */
+  @media(max-width:380px){
+    .tier-tabs{
+      display:flex;overflow-x:auto;gap:6px;
+      scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+      padding-bottom:2px;
+    }
+    .tier-tabs::-webkit-scrollbar{display:none}
+    .tier-btn{flex:0 0 auto;min-width:74px;scroll-snap-align:start}
+  }
+  .pick-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .strategy-item{padding:9px 10px}
+  .strategy-balls{gap:4px}
+  .strategy-balls .ball.sm{width:26px;height:26px;font-size:11.5px}
+  .strategy-name .strategy-desc{display:none}
+  .strategy-copy{padding:5px 8px}
   .pick-chip{padding:7px 2px 6px}
   .pick-chip .ball.lg{width:33px;height:33px;font-size:13.5px}
+  .pick-tag{font-size:10px;padding:1px 4px}
   .hero-actions{grid-template-columns:1fr;gap:8px}
   .hero-actions .btn{width:100%;min-height:46px}
   .heat{gap:4px}
@@ -545,13 +635,47 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
   .history td.col-period{padding-left:7px;font-size:10.5px}
   .history .num{width:20px;height:20px;font-size:9px}
   .history .num.special{width:22px;height:22px;font-size:9.5px;margin-left:2px}
-  .history .nums{gap:1.5px;flex-wrap:nowrap}
-  .history .num{flex:0 0 auto}
+  .history .nums{gap:1.5px}
   .badge{padding:2px 4px;font-size:10px}
   .exp-btn{padding:3px 5px;font-size:10px}
   .modal-backdrop{padding:8px}
   .modal-head,.modal-body{padding:13px 12px}
 }
+
+/* local-specific: hero meta/cost/fin summary (kept for script compatibility) */
+.hero-meta{font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:12px}
+.hero-meta strong{color:var(--ink);font-family:Consolas,monospace}
+.hero-meta .hm-sep{color:var(--line-strong);margin:0 4px}
+.hero-meta .hm-warn{color:#b45309;font-weight:700}
+.hero-meta .hm-link{color:var(--brand);font-weight:700;text-decoration:none;border-bottom:1px dashed currentColor}
+.cost-line{margin-top:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-size:12.5px;line-height:1.8;color:var(--muted)}
+.cost-line b{color:var(--ink);font-family:Consolas,monospace}
+.cost-line .cl-row{display:flex;flex-wrap:wrap;gap:4px 14px}
+.cost-line .cl-chip{font-weight:700;color:var(--ink-soft)}
+.cost-line .cl-warn{color:#b45309;font-weight:700}
+.cost-line .cl-note{display:block;margin-top:5px;padding-top:6px;border-top:1px dashed var(--line-strong);font-size:12px}
+.ci-bar{position:relative;height:7px;border-radius:99px;background:#e2e8f0;margin-top:6px;overflow:hidden}
+.ci-range{position:absolute;top:0;bottom:0;background:rgba(37,99,235,.28);border-radius:99px}
+.ci-point{position:absolute;top:-2px;width:3px;height:11px;border-radius:2px;background:var(--brand);transform:translateX(-1.5px)}
+.ci-base{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ef4444;opacity:.85;transform:translateX(-1px)}
+.ci-legend{font-size:11.5px;color:var(--faint,#94a3b8);font-weight:600;margin-top:3px}
+.fin-summary{margin:0;border:1px solid #bfdbfe;background:#f8fbff;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.8;color:var(--ink-soft)}
+.fin-summary b{font-family:Consolas,monospace}
+/* strategy groups (local script renders into dl.strategy-groups) */
+.strategy-groups{margin:0;display:grid;gap:10px;padding:12px}
+.strategy-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.strategy-group dt{font-weight:800;color:var(--ink-soft);font-size:12.5px}
+.strategy-group dd{display:flex;flex-wrap:wrap;gap:5px;margin:0}
+/* data modal extras */
+.ball-input.is-error{border-color:var(--hot)!important;box-shadow:0 0 0 3px rgba(229,75,75,.16)}
+.entry-hint{font-size:12.5px;line-height:1.7;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+.entry-hint strong{color:var(--ink)}
+.paste-note{margin:8px 0 0;font-size:12.5px;font-weight:600;line-height:1.6;border-radius:8px;padding:7px 11px}
+.paste-note.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#047857}
+.paste-note.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.ball-problems{margin:9px 0 0;font-size:12.5px;line-height:1.7;border-radius:8px;padding:8px 11px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
+.ball-problems b{display:block;margin-bottom:2px}
+.ball-problems span{display:block}
 </style>
 </head>
 <body>
@@ -594,15 +718,38 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </div>
   </section>
 
-  <!-- 模块 2：下期主推（首屏决策区） -->
-  <section class="card hero-card" id="heroSection" data-module="main-pick" aria-labelledby="heroTitle">
-    <div class="hero-title-row">
-      <h2 id="heroTitle">下期主推</h2>
-      <span class="pill brand" id="heroPeriodTag">--</span>
-      <span class="pill ok" id="heroCountdown">待同步开奖时间</span>
-      <span class="pill ok" id="zeroOverlapTag">零重叠</span>
+  <!-- 模块 2：三策略命中率（近 200 期，带置信区间） -->
+  <section class="card" id="thermometerSection" data-module="thermometer">
+    <div class="card-head">
+      <div class="card-title-wrap">
+        <h2>三策略命中率（近 200 期）</h2>
+        <span class="pill subtle" id="thermoRangeTag">最近 200 期看板 · 不影响算法</span>
+      </div>
     </div>
-    <div class="hero-meta" id="heroMeta"></div>
+    <div class="thermo-list" id="thermometerList"></div>
+    <div class="thermo-baseline" id="thermoBaseline"></div>
+  </section>
+
+  <!-- 模块 3：下期智能主推卡片 -->
+  <section class="card" id="mainPickSection" data-module="main-pick">
+    <div class="card-head">
+      <div class="card-title-wrap">
+        <h2>下期智能主推</h2>
+        <span class="pill brand" id="recPeriodTag">--</span>
+        <span class="pill brand" id="heroPeriodTag" style="display:none">--</span>
+        <span class="pill ok" id="heroCountdown">待同步开奖时间</span>
+        <span class="pill ok" id="zeroOverlapTag">零重叠</span>
+      </div>
+      <div class="head-meta" aria-label="波色图例">
+        <span class="wave-legend-inline">
+          <span class="legend-chip"><span class="legend-dot wave-dot" data-wave="red" style="background:#e54b4b"></span>红波</span>
+          <span class="legend-chip"><span class="legend-dot wave-dot" data-wave="blue" style="background:#3b82f6"></span>蓝波</span>
+          <span class="legend-chip"><span class="legend-dot wave-dot" data-wave="green" style="background:#10a878"></span>绿波</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="hero-meta" id="heroMeta" style="font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:12px"></div>
     <div class="signal-banner blue" id="signalBanner" role="status">
       <div class="signal-left">
         <span class="signal-dot" aria-hidden="true"></span>
@@ -628,18 +775,6 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 
     <div class="lock-current" id="lockCurrent" hidden></div>
 
-    <details class="fold-card" id="strategyFold" hidden>
-      <summary class="wide-summary">
-        <span class="left">
-          <b>三策略号码明细</b>
-          <span class="pill brand" id="strategyPeriod"></span>
-          <span class="sub-hint">每组完整 7 码，不随档位截取</span>
-        </span>
-        <span class="arrow" aria-hidden="true">⌄</span>
-      </summary>
-      <dl class="fold-content strategy-groups" id="strategyGroups"></dl>
-    </details>
-
     <details class="fold-card" id="lockFold">
       <summary class="wide-summary">
         <span class="left">
@@ -654,21 +789,25 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
         <div id="lockHistory" class="lock-list"><div class="empty">暂无记录</div></div>
       </div>
     </details>
+
+    <div id="finSummary" class="fin-summary" hidden></div>
   </section>
 
-  <div id="finSummary" class="fin-summary" hidden></div>
-
-
-  <!-- 模块 3：三策略命中率（近 200 期，带置信区间） -->
-  <section class="card" id="thermometerSection" data-module="thermometer">
-    <div class="card-head">
-      <div class="card-title-wrap">
-        <h2>三策略命中率（近 200 期）</h2>
-        <span class="pill subtle" id="thermoRangeTag">最近 200 期看板 · 不影响算法</span>
-      </div>
-    </div>
-    <div class="thermo-list" id="thermometerList"></div>
-    <div class="thermo-baseline" id="thermoBaseline"></div>
+  <!-- 模块 3.5：三策略号码（默认折叠） -->
+  <section class="card" id="strategySection" data-module="strategy-codes">
+    <details class="fold-card strategy-fold" id="strategyFold">
+      <summary class="wide-summary">
+        <span class="left">
+          <b>三策略号码明细</b>
+          <span class="pill brand" id="strategyPeriod"></span>
+          <span class="sub-hint" id="strategySummaryHint">每组完整 7 码，不随档位截取</span>
+        </span>
+        <span class="arrow">⌄</span>
+      </summary>
+      <dl class="fold-content strategy-groups" id="strategyGroups"></dl>
+      <div id="strategyBody" class="strategy-list" style="display:none"></div>
+      <div class="strategy-note" id="strategyNote" style="display:none"></div>
+    </details>
   </section>
 
   <!-- 模块 4：近 100 期热度分布 -->
@@ -692,6 +831,7 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
 
     <div id="heatHighlights" class="heat-highlights"></div>
     <div id="heatLegend" class="heat-legend"></div>
+    <div id="heatBaselineNote" class="heat-baseline-note" hidden></div>
     <div id="heatmap" class="heat"></div>
   </section>
 
@@ -702,9 +842,12 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
         <h2>近 30 期命中简表</h2>
         <span class="pill subtle" id="recent30Summary">最近 30 期</span>
         <span class="pill" id="recent30Baseline"></span>
+        <span id="recentSummary" style="display:none"></span>
       </div>
       <button type="button" class="btn ghost recent-head-btn" id="openHistoryModal">查看全部</button>
     </div>
+
+    <div class="recent-stats" id="recentStats" hidden></div>
 
     <div class="table-wrap">
       <table class="history">
@@ -712,10 +855,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
           <tr>
             <th class="col-period">期号</th>
             <th>开奖号码（末位特码）</th>
-            <th id="recentTierColHead">当前10码档</th>
-            <th>#1 传导</th>
-            <th>#2 蓄力</th>
-            <th>#3 肖热</th>
+            <th id="recentTierColHead">当前10码</th>
+            <th>#1 热态</th>
+            <th>#2 遗漏</th>
+            <th>#3 周期</th>
             <th>明细</th>
           </tr>
         </thead>
@@ -741,10 +884,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
             <tr>
               <th>年份</th>
               <th>期数</th>
-              <th id="modalYearlyTierHead">当前10码档<small>按分截取</small></th>
-              <th>#1 传导<small>7码</small></th>
-              <th>#2 蓄力<small>7码</small></th>
-              <th>#3 肖热<small>7码</small></th>
+              <th id="modalYearlyTierHead">当前10码<small>按分截取</small></th>
+              <th>#1 热态<small>7码</small></th>
+              <th>#2 遗漏<small>7码</small></th>
+              <th>#3 周期<small>7码</small></th>
               <th>三组并集<small>去重</small></th>
             </tr>
           </thead>
@@ -768,10 +911,10 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
             <tr>
               <th class="col-period">期号</th>
               <th>开奖号码（末位特码）</th>
-              <th id="modalTableTierHead">当前10码档</th>
-              <th>#1 传导</th>
-              <th>#2 蓄力</th>
-              <th>#3 肖热</th>
+              <th id="modalTableTierHead">当前10码</th>
+              <th>#1 热态</th>
+              <th>#2 遗漏</th>
+              <th>#3 周期</th>
               <th>明细</th>
             </tr>
           </thead>
@@ -780,6 +923,39 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
       </div>
 
       <div class="modal-more-bar" id="modalMoreBar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗 3：术语说明（把页面上的黑话一次说清） -->
+<div class="modal-backdrop" id="glossaryModal" role="dialog" aria-modal="true" aria-labelledby="glossaryTitle" hidden>
+  <div class="modal-dialog narrow">
+    <div class="modal-head">
+      <h3 id="glossaryTitle">怎么看这个页面 · 术语说明</h3>
+      <button type="button" class="btn sm" id="closeGlossaryModal">关闭 ✕</button>
+    </div>
+    <div class="modal-body">
+      <dl class="glossary-list">
+        <dt>特码</dt>
+        <dd>每期开出的第 7 个号码（页面里带金圈的那个）。本工具只针对它选号：1 个号 = 1 注，命中概率 1/49。</dd>
+        <dt>#1 热态 / #2 遗漏 / #3 周期</dt>
+        <dd>三套各自独立的打分规则，各给出 7 个号码。它们只是三种排序方式，不代表预测能力。</dd>
+        <dt>双策共振（两组以上选中）</dt>
+        <dd>某个号同时被 2 组或 3 组选中。听起来更"稳"，但实测命中率与普通号没有差别，只作展示。</dd>
+        <dt>综合分</dt>
+        <dd>把三组评分换算成排名百分位后，按 热态 40% / 遗漏 34% / 周期 26% 加权，再给入选的号加成，得到 49 个号的统一排序。</dd>
+        <dt>5 / 7 / 10 / 12 码档</dt>
+        <dd>取综合分排序的前 N 个号码，四个档位严格互相包含（12 码档一定包含 10 码档）。</dd>
+        <dt>并集全取</dt>
+        <dd>综合分前 12 码 ∪ 三组去重后的全部号码。码数随当期三组重叠程度浮动（历史 14~21 码），因此每期注数与成本也会浮动。</dd>
+        <dt>当前连错 N 期</dt>
+        <dd>当前档位连续 N 期没命中特码。纯随机下这非常常见（例如 7 码档连错 5 期的概率约 46%），不是"该回补了"的信号。</dd>
+        <dt>期望净亏</dt>
+        <dd>按赔率 48 倍计算，每期投入 − 期望返奖。特码赔率 48 倍时回报率恒为 48/49 ≈ 97.96%，与选哪个号无关。</dd>
+        <dt>底库 / 同步</dt>
+        <dd>底库是随页面一起下发的历史开奖（当前 1786 期可用）；「一键同步」只从仓库或上游追加连续的新期，不会跳过缺失的期号。</dd>
+      </dl>
+      <div class="glossary-foot">每期开奖相互独立，以上规则都不改变单注 1/49 的命中概率；本工具的价值在于把选择过程变得可复现、可核对。</div>
     </div>
   </div>
 </div>
@@ -793,31 +969,26 @@ details[open]>.wide-summary .arrow{transform:rotate(180deg)}
     </div>
     <div class="modal-body">
       <div>
-        <div class="entry-hint">
-          补录的是<strong>最新已开奖、但还没进底库</strong>的那一期。右边输入框可以直接整段粘贴开奖网站原文，
-          期号、日期、时间会被自动忽略，只取 7 个开奖号码。
-        </div>
         <div class="form-row">
-          <label for="periodLabel">要补录的期号</label>
+          <label for="periodLabel">下期期号</label>
           <input id="periodLabel" class="text-input" maxlength="8" placeholder="2026-320">
           <input id="quickPaste" class="paste-input" placeholder="整段粘贴，如：第320期 05 12 18 27 33 41 + 特码 07">
         </div>
-        <div id="pasteNote" class="paste-note" role="status" aria-live="polite" hidden></div>
+        <p id="pasteNote" class="paste-note"></p>
         <div class="balls-wrap" id="ballInputs"></div>
-        <div id="ballProblems" class="ball-problems" role="alert" hidden></div>
+        <div id="ballProblems" class="ball-problems"></div>
         <div class="actions">
-          <button class="btn primary" id="submitDraw" type="button">保存这期开奖</button>
+          <button class="btn primary" id="submitDraw" type="button">保存本期开奖</button>
           <button class="btn" id="undoDraw" type="button">撤销上条手动</button>
+          <button class="btn" id="exportBtn" type="button" title="只导出本机新增记录与锁定快照，不含随页面下发的内置底库">导出本机记录</button>
+          <button class="btn" id="importBtn" type="button">导入备份</button>
+          <button class="btn danger" id="clearData" type="button">清空本机新增</button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
         </div>
-        <details class="data-more" id="dataMoreFold">
-          <summary>备份、导入与清空</summary>
-          <div class="actions">
-            <button class="btn" id="exportBtn" type="button">导出备份</button>
-            <button class="btn" id="importBtn" type="button">导入备份</button>
-            <button class="btn danger" id="clearData" type="button">清空本机新增</button>
-            <input type="file" id="importFile" accept="application/json,.json" hidden>
-          </div>
-        </details>
+        <div class="backup-note">
+          <b>关于备份：</b>内置底库（<span id="backupDbInfo">—</span>）随页面一起更新，不需要导出；
+          「导出本机记录」只保存你手动补录/同步到本机的期次与锁定快照。
+        </div>
         <div id="entryFlash" class="entry-flash"></div>
       </div>
     </div>
